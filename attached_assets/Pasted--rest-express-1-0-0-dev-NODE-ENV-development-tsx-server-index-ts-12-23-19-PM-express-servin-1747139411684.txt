@@ -1,0 +1,90 @@
+> rest-express@1.0.0 dev
+> NODE_ENV=development tsx server/index.ts
+
+12:23:19 PM [express] serving on port 5000
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Fetching branches...
+Branches fetched: [
+  {
+    name: 'Computer Science Engineering',
+    code: 'CSE',
+    isActive: true,
+    comingSoon: false,
+    id: 1
+  },
+  {
+    name: 'Electronics & Communication Engineering',
+    code: 'ECE',
+    isActive: false,
+    comingSoon: true,
+    id: 2
+  },
+  {
+    name: 'Mechanical Engineering',
+    code: 'ME',
+    isActive: false,
+    comingSoon: true,
+    id: 3
+  },
+  {
+    name: 'Civil Engineering',
+    code: 'CE',
+    isActive: false,
+    comingSoon: true,
+    id: 4
+  },
+  {
+    name: 'Electrical Engineering',
+    code: 'EE',
+    isActive: false,
+    comingSoon: true,
+    id: 5
+  }
+]
+12:23:40 PM [express] GET /api/branches 304 in 5ms :: [{"name":"Computer Science Engineering","code":…
+12:23:40 PM [express] GET /api/branches/CSE 304 in 1ms :: {"name":"Computer Science Engineering","cod…
+12:23:40 PM [express] GET /api/subjects 400 in 1ms :: {"message":"Invalid branch ID or semester numbe…
+Fetching branches...
+Branches fetched: [
+  {
+    name: 'Computer Science Engineering',
+    code: 'CSE',
+    isActive: true,
+    comingSoon: false,
+    id: 1
+  },
+  {
+    name: 'Electronics & Communication Engineering',
+    code: 'ECE',
+    isActive: false,
+    comingSoon: true,
+    id: 2
+  },
+  {
+    name: 'Mechanical Engineering',
+    code: 'ME',
+    isActive: false,
+    comingSoon: true,
+    id: 3
+  },
+  {
+    name: 'Civil Engineering',
+    code: 'CE',
+    isActive: false,
+    comingSoon: true,
+    id: 4
+  },
+  {
+    name: 'Electrical Engineering',
+    code: 'EE',
+    isActive: false,
+    comingSoon: true,
+    id: 5
+  }
+]
+12:23:40 PM [express] GET /api/branches 304 in 2ms :: [{"name":"Computer Science Engineering","code":…
+12:24:00 PM [express] GET /api/subjects 400 in 1ms :: {"message":"Invalid branch ID or semester numbe…
+12:24:01 PM [express] GET /api/subjects 400 in 1ms :: {"message":"Invalid branch ID or semester numbe…
+^C
