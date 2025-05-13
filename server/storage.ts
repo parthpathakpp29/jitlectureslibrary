@@ -41,95 +41,13 @@ export interface IStorage {
   getVideoById(id: number): Promise<Video | undefined>;
 }
 
-// Create a fallback memory storage for testing
-class MemStorage implements IStorage {
-  private users: User[] = [];
-  private branches: Branch[] = [
-    { id: 1, name: 'Computer Science Engineering', code: 'CSE', isActive: true, comingSoon: false },
-    { id: 2, name: 'Electronics & Communication Engineering', code: 'ECE', isActive: false, comingSoon: true },
-    { id: 3, name: 'Mechanical Engineering', code: 'ME', isActive: false, comingSoon: true },
-    { id: 4, name: 'Civil Engineering', code: 'CE', isActive: false, comingSoon: true },
-    { id: 5, name: 'Electrical Engineering', code: 'EE', isActive: false, comingSoon: true }
-  ];
-  private semesters: Semester[] = Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    number: i + 1,
-    branchId: 1
-  }));
-  private subjects: Subject[] = [
-    { id: 1, name: 'Engineering Mathematics I', description: 'Introduction to calculus, differential equations, and linear algebra', semesterId: 1, branchId: 1 },
-    { id: 2, name: 'Physics', description: 'Mechanics, electromagnetism, and modern physics', semesterId: 1, branchId: 1 },
-    { id: 3, name: 'Introduction to Computing', description: 'Basic computer organization, algorithms, and programming concepts', semesterId: 1, branchId: 1 }
-  ];
-  private lecturers: Lecturer[] = [];
-  private videos: Video[] = [];
-
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.find(u => u.id === id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.users.find(u => u.username === username);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const newUser = { ...user, id: this.users.length + 1 };
-    this.users.push(newUser);
-    return newUser;
-  }
-
-  async getAllBranches(): Promise<Branch[]> {
-    console.log("Fetching branches...");
-    console.log("Branches fetched:", this.branches);
-    return this.branches;
-  }
-
-  async getBranch(id: number): Promise<Branch | undefined> {
-    return this.branches.find(b => b.id === id);
-  }
-
-  async getBranchByCode(code: string): Promise<Branch | undefined> {
-    return this.branches.find(b => b.code === code);
-  }
-
-  async getSemestersByBranch(branchId: number): Promise<Semester[]> {
-    return this.semesters.filter(s => s.branchId === branchId);
-  }
-
-  async getSubjectsBySemester(semesterId: number): Promise<Subject[]> {
-    return this.subjects.filter(s => s.semesterId === semesterId);
-  }
-
-  async getSubjectsByBranchAndSemester(branchId: number, semesterNumber: number): Promise<Subject[]> {
-    const semester = this.semesters.find(s => s.branchId === branchId && s.number === semesterNumber);
-    if (!semester) return [];
-    return this.subjects.filter(s => s.semesterId === semester.id && s.branchId === branchId);
-  }
-
-  async getLecturer(id: number): Promise<Lecturer | undefined> {
-    return this.lecturers.find(l => l.id === id);
-  }
-
-  async getVideosBySubject(subjectId: number): Promise<Video[]> {
-    return this.videos.filter(v => v.subjectId === subjectId);
-  }
-
-  async getVideoById(id: number): Promise<Video | undefined> {
-    return this.videos.find(v => v.id === id);
-  }
-}
-
 export class SupabaseStorage implements IStorage {
   private supabase: ReturnType<typeof createClient>;
 
   constructor() {
-    // Get credentials from environment variables
-    const supabaseUrl = process.env.VITE_SUPABASE_URL;
-    const supabaseKey = process.env.VITE_SUPABASE_ANON_KEY;
-    
-    if (!supabaseUrl || !supabaseKey) {
-      throw new Error("Supabase URL and anon key are required. Please set VITE_SUPABASE_URL and VITE_SUPABASE_ANON_KEY environment variables.");
-    }
+    // Hardcoded credentials as per your request
+    const supabaseUrl = 'https://jbcyhmhjlcfdavqdfosq.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImpiY3lobWhqbGNmZGF2cWRmb3NxIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDcxMzU5ODYsImV4cCI6MjA2MjcxMTk4Nn0.LvMCWlq-QhPL_aCGLSJjvq4Dt0Du4w25jp_2fXwlTQk';
     
     // Initialize Supabase client
     this.supabase = createClient(supabaseUrl, supabaseKey);
@@ -141,25 +59,18 @@ export class SupabaseStorage implements IStorage {
   
   private async initializeDatabase() {
     try {
-      // Check if tables exist
-      console.log("Checking for existing tables...");
-      const { data: existingTables, error } = await this.supabase
+      // Check if tables exist and contain data
+      console.log("Checking for existing tables and data...");
+      const { data: existingBranches, error } = await this.supabase
         .from('branches')
         .select('id')
         .limit(1);
       
-      if (error) {
-        if (error.code === '42P01') { // Table doesn't exist error
-          console.log("Tables don't exist, creating them...");
-          await this.createTables();
-        } else {
-          console.error("Error checking tables:", error);
-        }
-      } else if (!existingTables || existingTables.length === 0) {
-        console.log("Tables exist but are empty, seeding initial data...");
-        await this.seedInitialData();
+      if (error || !existingBranches || existingBranches.length === 0) {
+        console.log("Need to setup database tables and data...");
+        await this.createTables();
       } else {
-        console.log("Tables already exist with data");
+        console.log("Database already initialized with data");
       }
     } catch (error) {
       console.error("Database initialization error:", error);
@@ -168,106 +79,9 @@ export class SupabaseStorage implements IStorage {
   
   private async createTables() {
     try {
-      // Create tables directly using the Supabase client
-      console.log("Creating tables directly using Supabase client...");
+      console.log("Setting up tables in Supabase...");
       
-      // Create branches table first
-      const { error: branchesError } = await this.supabase
-        .from('branches')
-        .insert([
-          { name: 'Computer Science Engineering', code: 'CSE', is_active: true, coming_soon: false },
-          { name: 'Electronics & Communication Engineering', code: 'ECE', is_active: false, coming_soon: true },
-          { name: 'Mechanical Engineering', code: 'ME', is_active: false, coming_soon: true },
-          { name: 'Civil Engineering', code: 'CE', is_active: false, coming_soon: true },
-          { name: 'Electrical Engineering', code: 'EE', is_active: false, coming_soon: true }
-        ]);
-        
-      if (branchesError) {
-        console.error("Error creating branches table:", branchesError);
-      } else {
-        console.log("✅ Branches table created and seeded");
-        
-        // Get the CSE branch ID
-        const { data: branches } = await this.supabase
-          .from('branches')
-          .select('*')
-          .eq('code', 'CSE');
-          
-        if (branches && branches.length > 0) {
-          const cseBranch = branches[0];
-          
-          // Create semesters
-          const semestersData = [];
-          for (let i = 1; i <= 8; i++) {
-            semestersData.push({ number: i, branch_id: cseBranch.id });
-          }
-          
-          const { error: semestersError } = await this.supabase
-            .from('semesters')
-            .insert(semestersData);
-            
-          if (semestersError) {
-            console.error("Error creating semesters:", semestersError);
-          } else {
-            console.log("✅ Semesters table created and seeded");
-            
-            // Get first semester ID
-            const { data: semesters } = await this.supabase
-              .from('semesters')
-              .select('*')
-              .eq('branch_id', cseBranch.id)
-              .eq('number', 1);
-              
-            if (semesters && semesters.length > 0) {
-              const firstSemester = semesters[0];
-              
-              // Create subjects
-              const subjectsData = [
-                {
-                  name: 'Engineering Mathematics I',
-                  description: 'Introduction to calculus, differential equations, and linear algebra',
-                  semester_id: firstSemester.id,
-                  branch_id: cseBranch.id
-                },
-                {
-                  name: 'Physics',
-                  description: 'Mechanics, electromagnetism, and modern physics',
-                  semester_id: firstSemester.id,
-                  branch_id: cseBranch.id
-                },
-                {
-                  name: 'Introduction to Computing',
-                  description: 'Basic computer organization, algorithms, and programming concepts',
-                  semester_id: firstSemester.id,
-                  branch_id: cseBranch.id
-                }
-              ];
-              
-              const { error: subjectsError } = await this.supabase
-                .from('subjects')
-                .insert(subjectsData);
-                
-              if (subjectsError) {
-                console.error("Error creating subjects:", subjectsError);
-              } else {
-                console.log("✅ Subjects table created and seeded");
-              }
-            }
-          }
-        }
-      }
-      
-      console.log("✅ Database initialization complete");
-      
-    } catch (error) {
-      console.error("Error creating tables:", error);
-      throw error;
-    }
-  }
-  
-  private async seedInitialData() {
-    try {
-      // Seed branches
+      // 1. Create and seed branches table
       const branchesData = [
         { name: 'Computer Science Engineering', code: 'CSE', is_active: true, coming_soon: false },
         { name: 'Electronics & Communication Engineering', code: 'ECE', is_active: false, coming_soon: true },
@@ -276,86 +90,154 @@ export class SupabaseStorage implements IStorage {
         { name: 'Electrical Engineering', code: 'EE', is_active: false, coming_soon: true }
       ];
       
-      const { data: branches, error: branchError } = await this.supabase
+      const { data: branches, error: branchesError } = await this.supabase
         .from('branches')
         .upsert(branchesData, { onConflict: 'code' })
         .select();
       
-      if (branchError) {
-        console.error("Error seeding branches:", branchError);
+      if (branchesError) {
+        console.error("Error creating branches table:", branchesError);
         return;
       }
       
-      console.log("✅ Branches seeded:", branches?.length);
+      console.log("✅ Branches created:", branches?.length || 0);
       
-      // Get CSE branch id
+      // 2. Get CSE branch ID and create semesters
       const cseBranch = branches?.find(b => b.code === 'CSE');
       if (!cseBranch) {
-        console.error("Could not find CSE branch after seeding");
+        console.error("Could not find CSE branch after creating");
         return;
       }
       
-      // Seed semesters for CSE
+      // Create semesters for CSE
       const semestersData = [];
       for (let i = 1; i <= 8; i++) {
         semestersData.push({ number: i, branch_id: cseBranch.id });
       }
       
-      const { data: semesters, error: semesterError } = await this.supabase
+      const { data: semesters, error: semestersError } = await this.supabase
         .from('semesters')
         .upsert(semestersData, { onConflict: 'number, branch_id' })
         .select();
       
-      if (semesterError) {
-        console.error("Error seeding semesters:", semesterError);
+      if (semestersError) {
+        console.error("Error creating semesters:", semestersError);
         return;
       }
       
-      console.log("✅ Semesters seeded:", semesters?.length);
+      console.log("✅ Semesters created:", semesters?.length || 0);
       
-      // Seed sample subjects for first semester
-      if (semesters && semesters.length > 0) {
-        const firstSemester = semesters.find(s => s.number === 1);
-        if (firstSemester) {
-          const subjectsData = [
-            {
-              name: 'Engineering Mathematics I',
-              description: 'Introduction to calculus, differential equations, and linear algebra',
-              semester_id: firstSemester.id,
-              branch_id: cseBranch.id
-            },
-            {
-              name: 'Physics',
-              description: 'Mechanics, electromagnetism, and modern physics',
-              semester_id: firstSemester.id,
-              branch_id: cseBranch.id
-            },
-            {
-              name: 'Introduction to Computing',
-              description: 'Basic computer organization, algorithms, and programming concepts',
-              semester_id: firstSemester.id,
-              branch_id: cseBranch.id
-            }
-          ];
-          
-          const { data: subjects, error: subjectError } = await this.supabase
-            .from('subjects')
-            .upsert(subjectsData)
-            .select();
-          
-          if (subjectError) {
-            console.error("Error seeding subjects:", subjectError);
-          } else {
-            console.log("✅ Subjects seeded:", subjects?.length);
+      // 3. Add sample subjects for first semester
+      const firstSemester = semesters?.find(s => s.number === 1);
+      if (!firstSemester) {
+        console.error("Could not find first semester after creating");
+        return;
+      }
+      
+      const subjectsData = [
+        {
+          name: 'Engineering Mathematics I',
+          description: 'Introduction to calculus, differential equations, and linear algebra',
+          semester_id: firstSemester.id,
+          branch_id: cseBranch.id
+        },
+        {
+          name: 'Physics',
+          description: 'Mechanics, electromagnetism, and modern physics',
+          semester_id: firstSemester.id,
+          branch_id: cseBranch.id
+        },
+        {
+          name: 'Introduction to Computing',
+          description: 'Basic computer organization, algorithms, and programming concepts',
+          semester_id: firstSemester.id,
+          branch_id: cseBranch.id
+        }
+      ];
+      
+      const { data: subjects, error: subjectsError } = await this.supabase
+        .from('subjects')
+        .upsert(subjectsData, { onConflict: 'name, semester_id' })
+        .select();
+      
+      if (subjectsError) {
+        console.error("Error creating subjects:", subjectsError);
+        return;
+      }
+      
+      console.log("✅ Subjects created:", subjects?.length || 0);
+      
+      // 4. Create some example lecturers
+      const lecturersData = [
+        { 
+          name: 'Dr. John Smith', 
+          title: 'Professor', 
+          institution: 'MIT',
+          image_url: null
+        },
+        { 
+          name: 'Dr. Sarah Johnson', 
+          title: 'Associate Professor', 
+          institution: 'Stanford University',
+          image_url: null
+        }
+      ];
+      
+      const { data: lecturers, error: lecturersError } = await this.supabase
+        .from('lecturers')
+        .upsert(lecturersData, { onConflict: 'name, institution' })
+        .select();
+      
+      if (lecturersError) {
+        console.error("Error creating lecturers:", lecturersError);
+        return;
+      }
+      
+      console.log("✅ Lecturers created:", lecturers?.length || 0);
+      
+      if (lecturers && subjects && lecturers.length > 0 && subjects.length > 0) {
+        // 5. Create some example videos
+        const videosData = [
+          {
+            title: 'Introduction to Calculus',
+            description: 'Learn the basics of calculus, limits, derivatives, and integrals',
+            youtube_id: 'dQw4w9WgXcQ', // Example YouTube ID
+            duration: 3600, // 1 hour in seconds
+            subject_id: subjects[0].id,
+            lecturer_id: lecturers[0].id,
+            published_at: new Date().toISOString()
+          },
+          {
+            title: 'Newton\'s Laws of Motion',
+            description: 'Detailed explanation of Newton\'s three laws of motion with examples',
+            youtube_id: 'XGgus_oEVq4', // Example YouTube ID
+            duration: 2700, // 45 minutes in seconds
+            subject_id: subjects[1].id,
+            lecturer_id: lecturers[1].id,
+            published_at: new Date().toISOString()
           }
+        ];
+        
+        const { data: videos, error: videosError } = await this.supabase
+          .from('videos')
+          .upsert(videosData)
+          .select();
+        
+        if (videosError) {
+          console.error("Error creating videos:", videosError);
+        } else {
+          console.log("✅ Videos created:", videos?.length || 0);
         }
       }
       
-      console.log("✅ Initial data seeded successfully");
+      console.log("✅ Database setup complete!");
+      
     } catch (error) {
-      console.error("Error seeding initial data:", error);
+      console.error("Error setting up database:", error);
     }
   }
+  
+  // Note: We've combined table creation and data seeding in createTables
 
   // User methods
   async getUser(id: number): Promise<User | undefined> {
@@ -618,5 +500,5 @@ export class SupabaseStorage implements IStorage {
     } as Video;
   }
 }
-// Use in-memory storage for now until Supabase connection is properly configured
-export const storage = new MemStorage();
+// Initialize Supabase storage
+export const storage = new SupabaseStorage();
