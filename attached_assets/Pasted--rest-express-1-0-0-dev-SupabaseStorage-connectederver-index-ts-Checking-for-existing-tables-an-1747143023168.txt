@@ -1,0 +1,49 @@
+> rest-express@1.0.0 dev
+✅ SupabaseStorage connectederver/index.ts
+Checking for existing tables and data...
+1:28:42 PM [express] serving on port 5000
+Need to setup database tables and data...
+Setting up tables in Supabase...
+Browserslist: browsers data (caniuse-lite) is 7 months old. Please run:
+  npx update-browserslist-db@latest
+  Why you should do it regularly: https://github.com/browserslist/update-db#readme
+Error creating branches table: {}
+Fetching branches...
+Fetching branches...
+Error fetching branches: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.branches" does not exist'
+}
+Error fetching branches: Error: Failed to fetch branches: relation "public.branches" does not exist
+    at SupabaseStorage.getAllBranches (/home/runner/workspace/server/storage.ts:298:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:14:24)
+1:28:48 PM [express] GET /api/branches 500 in 291ms :: {"message":"Failed to fetch branches"}
+Fetching branches...
+Fetching branches...
+Error fetching branches: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.branches" does not exist'
+}
+Error fetching branches: Error: Failed to fetch branches: relation "public.branches" does not exist
+    at SupabaseStorage.getAllBranches (/home/runner/workspace/server/storage.ts:298:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:14:24)
+1:28:51 PM [express] GET /api/branches 500 in 809ms :: {"message":"Failed to fetch branches"}
+Fetching branches...
+Fetching branches...
+Error fetching branches: {
+  code: '42P01',
+  details: null,
+  hint: null,
+  message: 'relation "public.branches" does not exist'
+}
+Error fetching branches: Error: Failed to fetch branches: relation "public.branches" does not exist
+    at SupabaseStorage.getAllBranches (/home/runner/workspace/server/storage.ts:298:13)
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5)
+    at async <anonymous> (/home/runner/workspace/server/routes.ts:14:24)
+1:28:55 PM [express] GET /api/branches 500 in 791ms :: {"message":"Failed to fetch branches"}

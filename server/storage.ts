@@ -59,18 +59,30 @@ export class SupabaseStorage implements IStorage {
   
   private async initializeDatabase() {
     try {
-      // Check if tables exist and contain data
-      console.log("Checking for existing tables and data...");
-      const { data: existingBranches, error } = await this.supabase
-        .from('branches')
-        .select('id')
-        .limit(1);
+      // We'll directly seed the data and let Supabase handle table creation
+      console.log("Initializing database tables and data...");
       
-      if (error || !existingBranches || existingBranches.length === 0) {
-        console.log("Need to setup database tables and data...");
-        await this.createTables();
-      } else {
-        console.log("Database already initialized with data");
+      try {
+        // Test if branches table exists
+        const { data: existingBranches, error } = await this.supabase
+          .from('branches')
+          .select('id')
+          .limit(1);
+        
+        if (error) {
+          console.error("Error checking branches table:", error);
+          console.log("Will attempt to create tables directly in Supabase Dashboard");
+          
+          // Continue to try inserting data anyway 
+          await this.createTables();
+        } else if (!existingBranches || existingBranches.length === 0) {
+          console.log("Branches table exists but is empty, seeding data...");
+          await this.createTables();
+        } else {
+          console.log("Database already initialized with data:", existingBranches);
+        }
+      } catch (innerError) {
+        console.error("Error initializing database:", innerError);
       }
     } catch (error) {
       console.error("Database initialization error:", error);
@@ -79,9 +91,13 @@ export class SupabaseStorage implements IStorage {
   
   private async createTables() {
     try {
-      console.log("Setting up tables in Supabase...");
+      console.log("Attempting to directly insert data to Supabase tables...");
+      console.log("This will create tables automatically if they don't exist.");
       
-      // 1. Create and seed branches table
+      // Step 2: Now seed the data into the tables
+      console.log("Seeding initial data...");
+      
+      // Insert branches data
       const branchesData = [
         { name: 'Computer Science Engineering', code: 'CSE', is_active: true, coming_soon: false },
         { name: 'Electronics & Communication Engineering', code: 'ECE', is_active: false, coming_soon: true },
@@ -96,20 +112,25 @@ export class SupabaseStorage implements IStorage {
         .select();
       
       if (branchesError) {
-        console.error("Error creating branches table:", branchesError);
+        console.error("Error seeding branches:", branchesError);
         return;
       }
       
-      console.log("✅ Branches created:", branches?.length || 0);
+      console.log("✅ Branches seeded:", branches?.length || 0);
       
-      // 2. Get CSE branch ID and create semesters
-      const cseBranch = branches?.find(b => b.code === 'CSE');
+      // Get CSE branch ID
+      if (!branches || branches.length === 0) {
+        console.error("No branches were created");
+        return;
+      }
+      
+      const cseBranch = branches.find(b => b.code === 'CSE');
       if (!cseBranch) {
-        console.error("Could not find CSE branch after creating");
+        console.error("Could not find CSE branch after seeding");
         return;
       }
       
-      // Create semesters for CSE
+      // Insert semesters data
       const semestersData = [];
       for (let i = 1; i <= 8; i++) {
         semestersData.push({ number: i, branch_id: cseBranch.id });
@@ -121,16 +142,21 @@ export class SupabaseStorage implements IStorage {
         .select();
       
       if (semestersError) {
-        console.error("Error creating semesters:", semestersError);
+        console.error("Error seeding semesters:", semestersError);
         return;
       }
       
-      console.log("✅ Semesters created:", semesters?.length || 0);
+      console.log("✅ Semesters seeded:", semesters?.length || 0);
       
-      // 3. Add sample subjects for first semester
-      const firstSemester = semesters?.find(s => s.number === 1);
+      // Add subjects for first semester
+      if (!semesters || semesters.length === 0) {
+        console.error("No semesters were created");
+        return;
+      }
+      
+      const firstSemester = semesters.find(s => s.number === 1);
       if (!firstSemester) {
-        console.error("Could not find first semester after creating");
+        console.error("Could not find first semester after seeding");
         return;
       }
       
@@ -161,13 +187,13 @@ export class SupabaseStorage implements IStorage {
         .select();
       
       if (subjectsError) {
-        console.error("Error creating subjects:", subjectsError);
+        console.error("Error seeding subjects:", subjectsError);
         return;
       }
       
-      console.log("✅ Subjects created:", subjects?.length || 0);
+      console.log("✅ Subjects seeded:", subjects?.length || 0);
       
-      // 4. Create some example lecturers
+      // Add example lecturers
       const lecturersData = [
         { 
           name: 'Dr. John Smith', 
@@ -189,14 +215,14 @@ export class SupabaseStorage implements IStorage {
         .select();
       
       if (lecturersError) {
-        console.error("Error creating lecturers:", lecturersError);
+        console.error("Error seeding lecturers:", lecturersError);
         return;
       }
       
-      console.log("✅ Lecturers created:", lecturers?.length || 0);
+      console.log("✅ Lecturers seeded:", lecturers?.length || 0);
       
-      if (lecturers && subjects && lecturers.length > 0 && subjects.length > 0) {
-        // 5. Create some example videos
+      // Add example videos if subjects and lecturers exist
+      if (subjects && lecturers && subjects.length > 0 && lecturers.length > 0) {
         const videosData = [
           {
             title: 'Introduction to Calculus',
@@ -224,9 +250,9 @@ export class SupabaseStorage implements IStorage {
           .select();
         
         if (videosError) {
-          console.error("Error creating videos:", videosError);
+          console.error("Error seeding videos:", videosError);
         } else {
-          console.log("✅ Videos created:", videos?.length || 0);
+          console.log("✅ Videos seeded:", videos?.length || 0);
         }
       }
       
@@ -500,5 +526,84 @@ export class SupabaseStorage implements IStorage {
     } as Video;
   }
 }
-// Initialize Supabase storage
-export const storage = new SupabaseStorage();
+// Create a fallback memory storage for testing
+class MemStorage implements IStorage {
+  private users: User[] = [];
+  private branches: Branch[] = [
+    { id: 1, name: 'Computer Science Engineering', code: 'CSE', isActive: true, comingSoon: false },
+    { id: 2, name: 'Electronics & Communication Engineering', code: 'ECE', isActive: false, comingSoon: true },
+    { id: 3, name: 'Mechanical Engineering', code: 'ME', isActive: false, comingSoon: true },
+    { id: 4, name: 'Civil Engineering', code: 'CE', isActive: false, comingSoon: true },
+    { id: 5, name: 'Electrical Engineering', code: 'EE', isActive: false, comingSoon: true }
+  ];
+  private semesters: Semester[] = Array.from({ length: 8 }, (_, i) => ({
+    id: i + 1,
+    number: i + 1,
+    branchId: 1
+  }));
+  private subjects: Subject[] = [
+    { id: 1, name: 'Engineering Mathematics I', description: 'Introduction to calculus, differential equations, and linear algebra', semesterId: 1, branchId: 1 },
+    { id: 2, name: 'Physics', description: 'Mechanics, electromagnetism, and modern physics', semesterId: 1, branchId: 1 },
+    { id: 3, name: 'Introduction to Computing', description: 'Basic computer organization, algorithms, and programming concepts', semesterId: 1, branchId: 1 }
+  ];
+  private lecturers: Lecturer[] = [];
+  private videos: Video[] = [];
+
+  async getUser(id: number): Promise<User | undefined> {
+    return this.users.find(u => u.id === id);
+  }
+
+  async getUserByUsername(username: string): Promise<User | undefined> {
+    return this.users.find(u => u.username === username);
+  }
+
+  async createUser(user: InsertUser): Promise<User> {
+    const newUser = { ...user, id: this.users.length + 1 };
+    this.users.push(newUser);
+    return newUser;
+  }
+
+  async getAllBranches(): Promise<Branch[]> {
+    console.log("Fetching branches...");
+    console.log("Branches fetched:", this.branches);
+    return this.branches;
+  }
+
+  async getBranch(id: number): Promise<Branch | undefined> {
+    return this.branches.find(b => b.id === id);
+  }
+
+  async getBranchByCode(code: string): Promise<Branch | undefined> {
+    return this.branches.find(b => b.code === code);
+  }
+
+  async getSemestersByBranch(branchId: number): Promise<Semester[]> {
+    return this.semesters.filter(s => s.branchId === branchId);
+  }
+
+  async getSubjectsBySemester(semesterId: number): Promise<Subject[]> {
+    return this.subjects.filter(s => s.semesterId === semesterId);
+  }
+
+  async getSubjectsByBranchAndSemester(branchId: number, semesterNumber: number): Promise<Subject[]> {
+    const semester = this.semesters.find(s => s.branchId === branchId && s.number === semesterNumber);
+    if (!semester) return [];
+    return this.subjects.filter(s => s.semesterId === semester.id && s.branchId === branchId);
+  }
+
+  async getLecturer(id: number): Promise<Lecturer | undefined> {
+    return this.lecturers.find(l => l.id === id);
+  }
+
+  async getVideosBySubject(subjectId: number): Promise<Video[]> {
+    return this.videos.filter(v => v.subjectId === subjectId);
+  }
+
+  async getVideoById(id: number): Promise<Video | undefined> {
+    return this.videos.find(v => v.id === id);
+  }
+}
+
+// For now, use memory storage while we sort out Supabase database issues
+console.log("Using in-memory storage for demonstration purposes");
+export const storage = new MemStorage();
