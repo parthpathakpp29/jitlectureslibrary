@@ -59,11 +59,11 @@ export class SupabaseStorage implements IStorage {
   
   private async initializeDatabase() {
     try {
-      // We'll directly seed the data and let Supabase handle table creation
-      console.log("Initializing database tables and data...");
+      // Check if we need to seed data
+      console.log("Checking if database needs seeding...");
       
       try {
-        // Test if branches table exists
+        // Test if branches table has data
         const { data: existingBranches, error } = await this.supabase
           .from('branches')
           .select('id')
@@ -71,15 +71,12 @@ export class SupabaseStorage implements IStorage {
         
         if (error) {
           console.error("Error checking branches table:", error);
-          console.log("Will attempt to create tables directly in Supabase Dashboard");
-          
-          // Continue to try inserting data anyway 
-          await this.createTables();
+          console.log("Supabase connection issue. Please verify tables are created.");
         } else if (!existingBranches || existingBranches.length === 0) {
           console.log("Branches table exists but is empty, seeding data...");
-          await this.createTables();
+          await this.seedData();
         } else {
-          console.log("Database already initialized with data:", existingBranches);
+          console.log("Database already contains data, no seeding needed");
         }
       } catch (innerError) {
         console.error("Error initializing database:", innerError);
@@ -89,10 +86,9 @@ export class SupabaseStorage implements IStorage {
     }
   }
   
-  private async createTables() {
+  private async seedData() {
     try {
-      console.log("Attempting to directly insert data to Supabase tables...");
-      console.log("This will create tables automatically if they don't exist.");
+      console.log("Seeding data into Supabase tables...");
       
       // Step 2: Now seed the data into the tables
       console.log("Seeding initial data...");
@@ -526,84 +522,6 @@ export class SupabaseStorage implements IStorage {
     } as Video;
   }
 }
-// Create a fallback memory storage for testing
-class MemStorage implements IStorage {
-  private users: User[] = [];
-  private branches: Branch[] = [
-    { id: 1, name: 'Computer Science Engineering', code: 'CSE', isActive: true, comingSoon: false },
-    { id: 2, name: 'Electronics & Communication Engineering', code: 'ECE', isActive: false, comingSoon: true },
-    { id: 3, name: 'Mechanical Engineering', code: 'ME', isActive: false, comingSoon: true },
-    { id: 4, name: 'Civil Engineering', code: 'CE', isActive: false, comingSoon: true },
-    { id: 5, name: 'Electrical Engineering', code: 'EE', isActive: false, comingSoon: true }
-  ];
-  private semesters: Semester[] = Array.from({ length: 8 }, (_, i) => ({
-    id: i + 1,
-    number: i + 1,
-    branchId: 1
-  }));
-  private subjects: Subject[] = [
-    { id: 1, name: 'Engineering Mathematics I', description: 'Introduction to calculus, differential equations, and linear algebra', semesterId: 1, branchId: 1 },
-    { id: 2, name: 'Physics', description: 'Mechanics, electromagnetism, and modern physics', semesterId: 1, branchId: 1 },
-    { id: 3, name: 'Introduction to Computing', description: 'Basic computer organization, algorithms, and programming concepts', semesterId: 1, branchId: 1 }
-  ];
-  private lecturers: Lecturer[] = [];
-  private videos: Video[] = [];
-
-  async getUser(id: number): Promise<User | undefined> {
-    return this.users.find(u => u.id === id);
-  }
-
-  async getUserByUsername(username: string): Promise<User | undefined> {
-    return this.users.find(u => u.username === username);
-  }
-
-  async createUser(user: InsertUser): Promise<User> {
-    const newUser = { ...user, id: this.users.length + 1 };
-    this.users.push(newUser);
-    return newUser;
-  }
-
-  async getAllBranches(): Promise<Branch[]> {
-    console.log("Fetching branches...");
-    console.log("Branches fetched:", this.branches);
-    return this.branches;
-  }
-
-  async getBranch(id: number): Promise<Branch | undefined> {
-    return this.branches.find(b => b.id === id);
-  }
-
-  async getBranchByCode(code: string): Promise<Branch | undefined> {
-    return this.branches.find(b => b.code === code);
-  }
-
-  async getSemestersByBranch(branchId: number): Promise<Semester[]> {
-    return this.semesters.filter(s => s.branchId === branchId);
-  }
-
-  async getSubjectsBySemester(semesterId: number): Promise<Subject[]> {
-    return this.subjects.filter(s => s.semesterId === semesterId);
-  }
-
-  async getSubjectsByBranchAndSemester(branchId: number, semesterNumber: number): Promise<Subject[]> {
-    const semester = this.semesters.find(s => s.branchId === branchId && s.number === semesterNumber);
-    if (!semester) return [];
-    return this.subjects.filter(s => s.semesterId === semester.id && s.branchId === branchId);
-  }
-
-  async getLecturer(id: number): Promise<Lecturer | undefined> {
-    return this.lecturers.find(l => l.id === id);
-  }
-
-  async getVideosBySubject(subjectId: number): Promise<Video[]> {
-    return this.videos.filter(v => v.subjectId === subjectId);
-  }
-
-  async getVideoById(id: number): Promise<Video | undefined> {
-    return this.videos.find(v => v.id === id);
-  }
-}
-
-// For now, use memory storage while we sort out Supabase database issues
-console.log("Using in-memory storage for demonstration purposes");
-export const storage = new MemStorage();
+// Using Supabase storage since tables have been created
+console.log("Using Supabase database storage");
+export const storage = new SupabaseStorage();
