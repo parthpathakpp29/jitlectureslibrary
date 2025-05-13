@@ -1,5 +1,6 @@
 import { drizzle } from "drizzle-orm/neon-serverless";
 import { neon } from "@neondatabase/serverless";
+import { Client } from "pg";
 import { 
   users, branches, semesters, subjects, lecturers, videos,
   type User, type InsertUser,
@@ -497,8 +498,37 @@ export class SupabaseStorage implements IStorage {
       throw new Error("DATABASE_URL environment variable is required");
     }
     
-    const sql = neon(dbUrl);
-    this.db = drizzle(sql);
+    console.log("Connecting to database...");
+    
+    try {
+      // First test the direct connection with pg Client
+      const client = new Client({
+        connectionString: dbUrl,
+        ssl: { rejectUnauthorized: false }
+      });
+      
+      client.connect()
+        .then(() => {
+          console.log("Successfully connected with pg Client!");
+          // Test a query
+          return client.query('SELECT NOW()');
+        })
+        .then(result => {
+          console.log("Query result:", result.rows[0]);
+          client.end();
+        })
+        .catch(err => {
+          console.error("Error with direct pg connection:", err);
+        });
+      
+      // Use neon with drizzle
+      const sql = neon(dbUrl);
+      this.db = drizzle(sql);
+      console.log("Drizzle initialized with neon");
+    } catch (error) {
+      console.error("Error initializing database connection:", error);
+      throw error;
+    }
   }
 
   // User methods

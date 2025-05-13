@@ -10,9 +10,12 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all branches
   apiRouter.get("/branches", async (req, res) => {
     try {
+      console.log("Fetching branches...");
       const branches = await storage.getAllBranches();
+      console.log("Branches fetched:", branches);
       res.json(branches);
     } catch (error) {
+      console.error("Error fetching branches:", error);
       res.status(500).json({ message: "Failed to fetch branches" });
     }
   });
