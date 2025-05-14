@@ -17,10 +17,20 @@ interface SubjectCardProps {
 export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   const { isProfessor } = useAuth();
   
+  console.log(`SubjectCard rendering for subject ID: ${subject.id}`);
+  
   // Fetch videos for this subject
-  const { data: videos = [], isLoading, refetch } = useQuery<(Video & { lecturer: Lecturer })[]>({
-    queryKey: ["/api/subjects", subject.id, "videos"],
+  const { data: videos = [], isLoading, refetch, error } = useQuery<(Video & { lecturer: Lecturer })[]>({
+    queryKey: [`/api/subjects/${subject.id}/videos`]
   });
+  
+  // Log information about the query results
+  console.log(`Subject ${subject.id} has ${videos.length} videos, isLoading: ${isLoading}, hasError: ${error ? 'yes' : 'no'}`);
+  
+  // If there's an error, log it for debugging
+  if (error) {
+    console.error(`Error fetching videos for subject ${subject.id}:`, error);
+  } 
   
   if (isLoading) {
     return (

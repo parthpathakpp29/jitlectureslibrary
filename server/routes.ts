@@ -84,21 +84,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/subjects/:subjectId/videos", async (req, res) => {
     try {
       const subjectId = parseInt(req.params.subjectId);
-      console.log(`Fetching videos for subject ID: ${subjectId}`);
+      console.log(`🎬 API CALL: Fetching videos for subject ID: ${subjectId}`);
 
       if (isNaN(subjectId)) {
+        console.log(`❌ Invalid subject ID: ${req.params.subjectId}`);
         return res.status(400).json({ message: "Invalid subject ID" });
       }
 
+      // First check if the subject exists
+      const subject = await storage.getSubjectById(subjectId);
+      if (!subject) {
+        console.log(`❌ Subject with ID ${subjectId} not found`);
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      console.log(`✅ Subject found: ${subject.name} (ID: ${subjectId})`);
+      
       const videos = await storage.getVideosBySubject(subjectId);
-      console.log(`Found ${videos.length} videos for subject ID ${subjectId}`);
+      console.log(`🎥 Found ${videos.length} videos for subject ID ${subjectId}`);
 
       // Enhance videos with lecturer info
       const enhancedVideos = await Promise.all(
         videos.map(async (video) => {
-          console.log(`Getting lecturer info for video: ${video.title} (ID: ${video.id})`);
+          console.log(`👨‍🏫 Getting lecturer info for video: ${video.title} (ID: ${video.id})`);
           const lecturer = await storage.getLecturer(video.lecturerId);
-          console.log(`Lecturer for video ${video.id}: ${lecturer ? lecturer.name : 'Not found'}`);
+          console.log(`👨‍🏫 Lecturer for video ${video.id}: ${lecturer ? lecturer.name : 'Not found'}`);
           return {
             ...video,
             lecturer: lecturer || null,
@@ -106,7 +116,8 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       );
 
-      console.log(`Returning ${enhancedVideos.length} enhanced videos`);
+      console.log(`📤 Returning ${enhancedVideos.length} enhanced videos for subject ${subjectId}`);
+      console.log(JSON.stringify(enhancedVideos, null, 2));
       res.json(enhancedVideos);
     } catch (error) {
       console.error("Error fetching videos:", error);
