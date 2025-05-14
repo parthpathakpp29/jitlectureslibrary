@@ -9,9 +9,14 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/hooks/useAuth";
 import { VideoManagement } from "@/components/VideoManagement";
 
+// Define the type for video with lecturer info
+type VideoWithLecturer = Video & { 
+  lecturer: Lecturer 
+};
+
 interface SubjectCardProps {
   subject: Subject;
-  onVideoSelect: (video: Video & { lecturer: Lecturer }) => void;
+  onVideoSelect: (video: VideoWithLecturer) => void;
 }
 
 export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
@@ -20,7 +25,7 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   console.log(`SubjectCard rendering for subject ID: ${subject.id}`);
   
   // Fetch videos for this subject
-  const { data: videos = [], isLoading, refetch, error } = useQuery<(Video & { lecturer: Lecturer })[]>({
+  const { data: videos = [], isLoading, refetch, error } = useQuery<VideoWithLecturer[]>({
     queryKey: [`/api/subjects/${subject.id}/videos`]
   });
   
@@ -30,7 +35,7 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   // If there's an error, log it for debugging
   if (error) {
     console.error(`Error fetching videos for subject ${subject.id}:`, error);
-  } 
+  }
   
   if (isLoading) {
     return (
