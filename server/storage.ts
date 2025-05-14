@@ -46,7 +46,7 @@ export interface IStorage {
 }
 
 export class SupabaseStorage implements IStorage {
-  private supabase: ReturnType<typeof createClient>;
+  public supabase: ReturnType<typeof createClient>;
 
   constructor() {
     // Hardcoded credentials as per your request
@@ -763,6 +763,110 @@ export class SupabaseStorage implements IStorage {
       lecturerId: data.lecturer_id,
       publishedAt: data.published_at
     } as Video;
+  }
+  
+  async createVideo(videoData: Partial<Video>): Promise<Video> {
+    // Map our Video model to Supabase's video schema
+    const supabaseVideo = {
+      title: videoData.title,
+      description: videoData.description,
+      youtube_id: videoData.youtubeId,
+      duration: videoData.duration,
+      subject_id: videoData.subjectId,
+      lecturer_id: videoData.lecturerId,
+      published_at: videoData.publishedAt || new Date().toISOString()
+    };
+    
+    const { data, error } = await this.supabase
+      .from('videos')
+      .insert(supabaseVideo)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error creating video:", error);
+      throw new Error(`Failed to create video: ${error.message}`);
+    }
+    
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      youtubeId: data.youtube_id,
+      duration: data.duration,
+      subjectId: data.subject_id,
+      lecturerId: data.lecturer_id,
+      publishedAt: data.published_at
+    } as Video;
+  }
+  
+  async updateVideo(id: number, videoData: Partial<Video>): Promise<Video> {
+    // Map our Video model to Supabase's video schema
+    const supabaseVideo: Record<string, any> = {};
+    
+    if (videoData.title !== undefined) supabaseVideo.title = videoData.title;
+    if (videoData.description !== undefined) supabaseVideo.description = videoData.description;
+    if (videoData.youtubeId !== undefined) supabaseVideo.youtube_id = videoData.youtubeId;
+    if (videoData.duration !== undefined) supabaseVideo.duration = videoData.duration;
+    if (videoData.subjectId !== undefined) supabaseVideo.subject_id = videoData.subjectId;
+    if (videoData.lecturerId !== undefined) supabaseVideo.lecturer_id = videoData.lecturerId;
+    if (videoData.publishedAt !== undefined) supabaseVideo.published_at = videoData.publishedAt;
+    
+    const { data, error } = await this.supabase
+      .from('videos')
+      .update(supabaseVideo)
+      .eq('id', id)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error("Error updating video:", error);
+      throw new Error(`Failed to update video: ${error.message}`);
+    }
+    
+    return {
+      id: data.id,
+      title: data.title,
+      description: data.description,
+      youtubeId: data.youtube_id,
+      duration: data.duration,
+      subjectId: data.subject_id,
+      lecturerId: data.lecturer_id,
+      publishedAt: data.published_at
+    } as Video;
+  }
+  
+  async deleteVideo(id: number): Promise<void> {
+    const { error } = await this.supabase
+      .from('videos')
+      .delete()
+      .eq('id', id);
+    
+    if (error) {
+      console.error("Error deleting video:", error);
+      throw new Error(`Failed to delete video: ${error.message}`);
+    }
+  }
+  
+  async getSubjectById(id: number): Promise<Subject | undefined> {
+    const { data, error } = await this.supabase
+      .from('subjects')
+      .select('*')
+      .eq('id', id)
+      .single();
+    
+    if (error) {
+      console.error("Error getting subject by id:", error);
+      return undefined;
+    }
+    
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      semesterId: data.semester_id,
+      branchId: data.branch_id
+    } as Subject;
   }
 }
 // Using Supabase storage since tables have been created

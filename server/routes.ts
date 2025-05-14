@@ -355,6 +355,57 @@ export async function registerRoutes(app: Express): Promise<Server> {
       res.status(500).json({ message: "Failed to delete video" });
     }
   });
+  
+  // Get all lecturers
+  apiRouter.get("/lecturers", async (req, res) => {
+    try {
+      // This endpoint fetches all lecturers from the database
+      // Get directly from Supabase for now
+      const { data, error } = await storage.supabase
+        .from('lecturers')
+        .select('*');
+      
+      if (error) {
+        console.error("Error fetching lecturers:", error);
+        return res.status(500).json({ message: "Failed to fetch lecturers" });
+      }
+      
+      const lecturers = data.map(l => ({
+        id: l.id,
+        name: l.name,
+        title: l.title,
+        institution: l.institution,
+        imageUrl: l.image_url
+      }));
+      
+      res.json(lecturers);
+    } catch (error) {
+      console.error("Error fetching lecturers:", error);
+      res.status(500).json({ message: "Failed to fetch lecturers" });
+    }
+  });
+  
+  // Get subject by ID
+  apiRouter.get("/subjects/:id", async (req, res) => {
+    try {
+      const subjectId = parseInt(req.params.id);
+      
+      if (isNaN(subjectId)) {
+        return res.status(400).json({ message: "Invalid subject ID" });
+      }
+      
+      const subject = await storage.getSubjectById(subjectId);
+      
+      if (!subject) {
+        return res.status(404).json({ message: "Subject not found" });
+      }
+      
+      res.json(subject);
+    } catch (error) {
+      console.error("Error fetching subject:", error);
+      res.status(500).json({ message: "Failed to fetch subject" });
+    }
+  });
 
   app.use("/api", apiRouter);
 

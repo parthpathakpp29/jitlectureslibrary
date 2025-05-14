@@ -85,19 +85,19 @@ export function VideoManagement({ subjectId, onVideoAdded }: VideoManagementProp
   // Fetch videos for this subject
   const { data: videos = [], isLoading: isLoadingVideos } = useQuery<(Video & { lecturer: Lecturer })[]>({
     queryKey: ["/api/subjects", subjectId, "videos"],
-    enabled: !!subjectId && isProfessor,
+    enabled: Boolean(subjectId && isProfessor),
   });
   
   // Fetch all lecturers
   const { data: lecturers = [] } = useQuery<Lecturer[]>({
     queryKey: ["/api/lecturers"],
-    enabled: isProfessor,
+    enabled: Boolean(isProfessor),
   });
   
   // Get current subject info
   const { data: subject } = useQuery<Subject>({
     queryKey: ["/api/subjects", subjectId],
-    enabled: !!subjectId && isProfessor,
+    enabled: Boolean(subjectId && isProfessor),
   });
   
   // Form for adding/editing videos

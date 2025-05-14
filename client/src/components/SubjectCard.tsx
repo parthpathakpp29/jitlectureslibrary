@@ -6,6 +6,8 @@ import { useQuery } from "@tanstack/react-query";
 import { cn } from "@/lib/utils";
 import { formatDuration } from "@/lib/utils";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useAuth } from "@/hooks/useAuth";
+import { VideoManagement } from "@/components/VideoManagement";
 
 interface SubjectCardProps {
   subject: Subject;
@@ -13,8 +15,10 @@ interface SubjectCardProps {
 }
 
 export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
+  const { isProfessor } = useAuth();
+  
   // Fetch videos for this subject
-  const { data: videos = [], isLoading } = useQuery<(Video & { lecturer: Lecturer })[]>({
+  const { data: videos = [], isLoading, refetch } = useQuery<(Video & { lecturer: Lecturer })[]>({
     queryKey: ["/api/subjects", subject.id, "videos"],
   });
   
@@ -89,6 +93,14 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
           <div className="text-center py-8 text-gray-500">
             <p>No videos available for this subject yet.</p>
           </div>
+        )}
+        
+        {/* Video Management for professors */}
+        {isProfessor && (
+          <VideoManagement 
+            subjectId={subject.id} 
+            onVideoAdded={() => refetch()} 
+          />
         )}
       </CardContent>
     </Card>
