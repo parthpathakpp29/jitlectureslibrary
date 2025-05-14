@@ -157,6 +157,9 @@ export function useAuth() {
       }
     },
     onSuccess: () => {
+      // Clear userId from localStorage
+      localStorage.removeItem('userId');
+      
       // Clear auth state
       queryClient.setQueryData(["/api/users/me"], null);
       // Invalidate user-related queries
