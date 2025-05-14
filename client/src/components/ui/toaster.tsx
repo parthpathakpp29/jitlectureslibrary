@@ -13,7 +13,8 @@ export function Toaster() {
 
   return (
     <ToastProvider>
-      {toasts.map(function ({ id, title, description, action, ...props }) {
+      {toasts && toasts.length > 0 && toasts.map(function ({ id, title, description, action, ...props }) {
+        if (!id) return null; // Skip toasts without an id
         return (
           <Toast key={id} {...props}>
             <div className="grid gap-1">

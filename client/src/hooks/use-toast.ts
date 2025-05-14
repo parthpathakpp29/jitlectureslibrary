@@ -140,26 +140,40 @@ function dispatch(action: Action) {
 type Toast = Omit<ToasterToast, "id">
 
 function toast({ ...props }: Toast) {
-  const id = genId()
+  // Ensure ID is always a non-empty string
+  const id = genId() || `toast-${Date.now()}`
 
+  // Create update function
   const update = (props: ToasterToast) =>
     dispatch({
       type: "UPDATE_TOAST",
       toast: { ...props, id },
     })
+    
+  // Create dismiss function  
   const dismiss = () => dispatch({ type: "DISMISS_TOAST", toastId: id })
 
-  dispatch({
-    type: "ADD_TOAST",
-    toast: {
-      ...props,
-      id,
-      open: true,
-      onOpenChange: (open) => {
-        if (!open) dismiss()
+  // Check if we should actually show this toast
+  // Don't show toast for 401 errors when they're related to authentication checks
+  const isAuthError = 
+    props.description && 
+    typeof props.description === 'string' && 
+    props.description.includes('Not authenticated');
+    
+  if (!isAuthError) {
+    // Dispatch the toast action
+    dispatch({
+      type: "ADD_TOAST",
+      toast: {
+        ...props,
+        id,
+        open: true,
+        onOpenChange: (open) => {
+          if (!open) dismiss()
+        },
       },
-    },
-  })
+    })
+  }
 
   return {
     id: id,
