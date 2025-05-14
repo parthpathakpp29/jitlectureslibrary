@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { apiRequest } from "@/lib/queryClient";
 import { z } from "zod";
@@ -68,16 +68,53 @@ type VideoFormValues = z.infer<typeof videoSchema>;
 interface VideoManagementProps {
   subjectId: number;
   onVideoAdded?: () => void;
+  selectedVideo?: (Video & { lecturer: Lecturer }) | null;
+  isOpen?: boolean;
+  onOpenChange?: (open: boolean) => void;
 }
 
-export function VideoManagement({ subjectId, onVideoAdded }: VideoManagementProps) {
+export function VideoManagement({ 
+  subjectId, 
+  onVideoAdded, 
+  selectedVideo, 
+  isOpen: externalIsOpen, 
+  onOpenChange 
+}: VideoManagementProps) {
   const { isProfessor, user } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
-  const [selectedVideo, setSelectedVideo] = useState<(Video & { lecturer: Lecturer }) | null>(null);
+  
+  // Use the externally provided selectedVideo or internal state
+  const [internalSelectedVideo, setInternalSelectedVideo] = useState<(Video & { lecturer: Lecturer }) | null>(null);
+  
+  // Handle external isOpen state if provided
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  
+  // Combine internal and external state
+  const currentSelectedVideo = selectedVideo || internalSelectedVideo;
+  
+  // Handle the external open state if provided
+  useEffect(() => {
+    if (externalIsOpen !== undefined) {
+      if (externalIsOpen) {
+        // If external state wants dialog open and we have a selectedVideo, open edit/delete dialog
+        if (selectedVideo) {
+          setIsEditDialogOpen(true);
+        } else {
+          // Otherwise open add dialog
+          setIsAddDialogOpen(true);
+        }
+      } else {
+        // If external state wants dialogs closed
+        setIsAddDialogOpen(false);
+        setIsEditDialogOpen(false);
+        setIsDeleteDialogOpen(false);
+      }
+    }
+  }, [externalIsOpen, selectedVideo]);
   
   // If not a professor, don't render the component
   if (!isProfessor) return null;
@@ -188,7 +225,9 @@ export function VideoManagement({ subjectId, onVideoAdded }: VideoManagementProp
       });
       // Close dialog and reset form
       setIsEditDialogOpen(false);
-      setSelectedVideo(null);
+      setInternalSelectedVideo(null);
+      // Notify parent of state change if callback exists
+      if (onOpenChange) onOpenChange(false);
       // Refresh videos list
       queryClient.invalidateQueries({ queryKey: ["/api/subjects", subjectId, "videos"] });
     },
@@ -216,7 +255,9 @@ export function VideoManagement({ subjectId, onVideoAdded }: VideoManagementProp
       });
       // Close dialog
       setIsDeleteDialogOpen(false);
-      setSelectedVideo(null);
+      setInternalSelectedVideo(null);
+      // Notify parent of state change if callback exists
+      if (onOpenChange) onOpenChange(false);
       // Refresh videos list
       queryClient.invalidateQueries({ queryKey: ["/api/subjects", subjectId, "videos"] });
     },
