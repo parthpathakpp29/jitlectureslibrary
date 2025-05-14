@@ -150,7 +150,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // User login
+  // User login (for professors only)
   apiRouter.post("/users/login", async (req, res) => {
     try {
       const { username, password } = req.body;
@@ -159,10 +159,36 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(400).json({ message: "Username and password are required" });
       }
       
+      // Check if we need to add test professor user (kshitij/kk123456)
+      const existingProf = await storage.getUserByUsername('kshitij');
+      if (!existingProf) {
+        console.log("Adding test professor user...");
+        // Add the professor user from the CSV directly
+        const { error } = await storage.supabase
+          .from('users')
+          .insert([{
+            id: 1,
+            username: 'kshitij',
+            password: 'kk123456', // Plain text password as provided
+            type: 'professor'
+          }]);
+        
+        if (error) {
+          console.error("Error adding test professor:", error);
+        } else {
+          console.log("Test professor added successfully!");
+        }
+      }
+      
       const user = await storage.getUserByUsername(username);
       
       if (!user || user.password !== password) {
         return res.status(401).json({ message: "Invalid username or password" });
+      }
+      
+      // Check if user is a professor (only professors can log in)
+      if (user.type !== 'professor') {
+        return res.status(403).json({ message: "Only professors can log in" });
       }
       
       // For simplicity, we store the user ID in a query parameter

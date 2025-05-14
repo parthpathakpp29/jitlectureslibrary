@@ -36,8 +36,7 @@ type RegisterFormValues = z.infer<typeof registerSchema>;
 
 export default function AuthPage() {
   const [, setLocation] = useLocation();
-  const { login, register, loginStatus, registerStatus, isAuthenticated } = useAuth();
-  const [activeTab, setActiveTab] = useState<string>("login");
+  const { login, loginStatus, isAuthenticated } = useAuth();
 
   // Redirect to home if already logged in
   if (isAuthenticated) {
@@ -54,31 +53,9 @@ export default function AuthPage() {
     },
   });
 
-  // Register form
-  const registerForm = useForm<RegisterFormValues>({
-    resolver: zodResolver(registerSchema),
-    defaultValues: {
-      username: "",
-      password: "",
-      confirmPassword: "",
-    },
-  });
-
   // Handle login submission
   const onLoginSubmit = (values: LoginFormValues) => {
     login(values);
-  };
-
-  // Handle registration submission
-  const onRegisterSubmit = (values: RegisterFormValues) => {
-    const { confirmPassword, ...userData } = values;
-    register({ ...userData, type: "student" });
-    
-    // Reset form and switch to login tab on successful registration
-    if (!registerStatus.isError) {
-      registerForm.reset();
-      setActiveTab("login");
-    }
   };
 
   return (
@@ -96,114 +73,50 @@ export default function AuthPage() {
         {/* Auth Card */}
         <Card>
           <CardHeader>
-            <CardTitle className="text-center">Account Access</CardTitle>
+            <CardTitle className="text-center">Professor Login</CardTitle>
             <CardDescription className="text-center">
-              Login or create an account to continue
+              Login with your professor credentials to manage course content
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2 mb-6">
-                <TabsTrigger value="login">Login</TabsTrigger>
-                <TabsTrigger value="register">Register</TabsTrigger>
-              </TabsList>
-
-              {/* Login Form */}
-              <TabsContent value="login">
-                <Form {...loginForm}>
-                  <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
-                    <FormField
-                      control={loginForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter your username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={loginForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Enter your password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={loginStatus.isPending}
-                    >
-                      {loginStatus.isPending ? "Logging in..." : "Login"}
-                      <LogIn className="ml-2 h-4 w-4" />
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-
-              {/* Register Form */}
-              <TabsContent value="register">
-                <Form {...registerForm}>
-                  <form onSubmit={registerForm.handleSubmit(onRegisterSubmit)} className="space-y-4">
-                    <FormField
-                      control={registerForm.control}
-                      name="username"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Username</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Choose a username" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="password"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Create a password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={registerForm.control}
-                      name="confirmPassword"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Confirm Password</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder="Confirm your password" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <Button 
-                      type="submit" 
-                      className="w-full" 
-                      disabled={registerStatus.isPending}
-                    >
-                      {registerStatus.isPending ? "Creating account..." : "Create Account"}
-                    </Button>
-                  </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+            <Form {...loginForm}>
+              <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4">
+                <FormField
+                  control={loginForm.control}
+                  name="username"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Username</FormLabel>
+                      <FormControl>
+                        <Input placeholder="Enter your username" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={loginForm.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="Enter your password" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <Button 
+                  type="submit" 
+                  className="w-full" 
+                  disabled={loginStatus.isPending}
+                >
+                  {loginStatus.isPending ? "Logging in..." : "Login"}
+                  <LogIn className="ml-2 h-4 w-4" />
+                </Button>
+              </form>
+            </Form>
           </CardContent>
           <CardFooter className="flex justify-center">
             <p className="text-sm text-gray-500">
