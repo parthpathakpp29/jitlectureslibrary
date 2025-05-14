@@ -1,3 +1,4 @@
+import { useEffect } from "react";
 import { Link, useLocation } from "wouter";
 import { z } from "zod";
 import { useForm } from "react-hook-form";
@@ -27,12 +28,13 @@ type LoginFormValues = z.infer<typeof loginSchema>;
 export default function AuthPage() {
   const [, setLocation] = useLocation();
   const { login, loginStatus, isAuthenticated } = useAuth();
-
-  // Redirect to home if already logged in
-  if (isAuthenticated) {
-    setLocation("/");
-    return null;
-  }
+  
+  // Use useEffect for redirecting to avoid setState during render
+  useEffect(() => {
+    if (isAuthenticated) {
+      setLocation("/");
+    }
+  }, [isAuthenticated, setLocation]);
 
   // Login form
   const loginForm = useForm<LoginFormValues>({

@@ -1,3 +1,4 @@
+import React from "react";
 import { Switch, Route, useLocation } from "wouter";
 import { queryClient } from "./lib/queryClient";
 import { QueryClientProvider } from "@tanstack/react-query";
@@ -10,7 +11,12 @@ import Login from "@/pages/login";
 import { useAuth } from "@/hooks/useAuth";
 
 // Protected route component
-function ProtectedRoute({ component: Component, isProfessorOnly = false }) {
+interface ProtectedRouteProps {
+  component: React.ComponentType;
+  isProfessorOnly?: boolean;
+}
+
+function ProtectedRoute({ component: Component, isProfessorOnly = false }: ProtectedRouteProps) {
   const [, setLocation] = useLocation();
   const { user, isLoading, isProfessor } = useAuth();
   
