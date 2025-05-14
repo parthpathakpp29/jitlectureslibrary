@@ -28,12 +28,20 @@ export function useAuth() {
   const loginMutation = useMutation({
     mutationFn: async (credentials: { username: string; password: string }) => {
       try {
-        const res = await apiRequest({
-          url: "/api/users/login",
+        const res = await fetch("/api/users/login", {
           method: "POST",
-          data: credentials,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(credentials),
         });
-        return res as unknown as LoginResponse;
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Login failed");
+        }
+        
+        return await res.json() as LoginResponse;
       } catch (error) {
         throw error;
       }
@@ -59,12 +67,20 @@ export function useAuth() {
   const registerMutation = useMutation({
     mutationFn: async (userData: { username: string; password: string; type?: string }) => {
       try {
-        const res = await apiRequest({
-          url: "/api/users/register",
+        const res = await fetch("/api/users/register", {
           method: "POST",
-          data: userData,
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify(userData),
         });
-        return res as unknown as AuthUser;
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Registration failed");
+        }
+        
+        return await res.json() as AuthUser;
       } catch (error) {
         throw error;
       }
@@ -88,11 +104,19 @@ export function useAuth() {
   const logoutMutation = useMutation({
     mutationFn: async () => {
       try {
-        const res = await apiRequest({
-          url: "/api/users/logout",
+        const res = await fetch("/api/users/logout", {
           method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
         });
-        return res as unknown as { message: string };
+        
+        if (!res.ok) {
+          const errorData = await res.json();
+          throw new Error(errorData.message || "Logout failed");
+        }
+        
+        return await res.json() as { message: string };
       } catch (error) {
         throw error;
       }
