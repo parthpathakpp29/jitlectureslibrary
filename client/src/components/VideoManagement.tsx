@@ -205,9 +205,8 @@ export function VideoManagement({ subjectId, onVideoAdded }: VideoManagementProp
   const deleteVideoMutation = useMutation({
     mutationFn: async (id: number) => {
       return await apiRequest({
-        url: `/api/videos/${id}`,
+        url: `/api/videos/${id}?userId=${user?.id}`,
         method: "DELETE",
-        params: { userId: user?.id }, // Pass the user ID for authorization
       });
     },
     onSuccess: () => {
