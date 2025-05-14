@@ -359,25 +359,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get all lecturers
   apiRouter.get("/lecturers", async (req, res) => {
     try {
-      // This endpoint fetches all lecturers from the database
-      // Get directly from Supabase for now
-      const { data, error } = await storage.supabase
-        .from('lecturers')
-        .select('*');
-      
-      if (error) {
-        console.error("Error fetching lecturers:", error);
-        return res.status(500).json({ message: "Failed to fetch lecturers" });
-      }
-      
-      const lecturers = data.map(l => ({
-        id: l.id,
-        name: l.name,
-        title: l.title,
-        institution: l.institution,
-        imageUrl: l.image_url
-      }));
-      
+      const lecturers = await storage.getAllLecturers();
       res.json(lecturers);
     } catch (error) {
       console.error("Error fetching lecturers:", error);

@@ -36,6 +36,7 @@ export interface IStorage {
   
   // Lecturer methods
   getLecturer(id: number): Promise<Lecturer | undefined>;
+  getAllLecturers(): Promise<Lecturer[]>;
   
   // Video methods
   getVideosBySubject(subjectId: number): Promise<Video[]>;
@@ -715,6 +716,25 @@ export class SupabaseStorage implements IStorage {
       institution: data.institution,
       imageUrl: data.image_url
     } as Lecturer;
+  }
+  
+  async getAllLecturers(): Promise<Lecturer[]> {
+    const { data, error } = await this.supabase
+      .from('lecturers')
+      .select('*');
+    
+    if (error) {
+      console.error("Error getting lecturers:", error);
+      return [];
+    }
+    
+    return data.map(lecturer => ({
+      id: lecturer.id,
+      name: lecturer.name,
+      title: lecturer.title,
+      institution: lecturer.institution,
+      imageUrl: lecturer.image_url
+    })) as Lecturer[];
   }
 
   // Video methods
