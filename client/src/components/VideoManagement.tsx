@@ -177,13 +177,13 @@ export function VideoManagement({
   // Add video mutation
   const addVideoMutation = useMutation({
     mutationFn: async (data: VideoFormValues) => {
+      // Get userId from localStorage
+      const userId = localStorage.getItem('userId');
+      
       return await apiRequest<Video>({
-        url: "/api/videos",
+        url: `/api/videos?userId=${userId}`,
         method: "POST",
-        data: {
-          ...data,
-          userId: user?.id, // Pass the user ID for authorization
-        },
+        data: data,
       });
     },
     onSuccess: () => {
@@ -210,13 +210,13 @@ export function VideoManagement({
   // Edit video mutation
   const editVideoMutation = useMutation({
     mutationFn: async ({ id, data }: { id: number; data: VideoFormValues }) => {
+      // Get userId from localStorage
+      const userId = localStorage.getItem('userId');
+      
       return await apiRequest<Video>({
-        url: `/api/videos/${id}`,
+        url: `/api/videos/${id}?userId=${userId}`,
         method: "PATCH",
-        data: {
-          ...data,
-          userId: user?.id, // Pass the user ID for authorization
-        },
+        data: data,
       });
     },
     onSuccess: () => {
@@ -244,8 +244,11 @@ export function VideoManagement({
   // Delete video mutation
   const deleteVideoMutation = useMutation({
     mutationFn: async (id: number) => {
+      // Get userId from localStorage
+      const userId = localStorage.getItem('userId');
+      
       return await apiRequest({
-        url: `/api/videos/${id}?userId=${user?.id}`,
+        url: `/api/videos/${id}?userId=${userId}`,
         method: "DELETE",
       });
     },
