@@ -4,17 +4,20 @@ import { useQuery } from "@tanstack/react-query";
 import { Header } from "@/components/Header";
 import { Sidebar } from "@/components/Sidebar";
 import { SubjectCard } from "@/components/SubjectCard";
+import { SubjectManagement } from "@/components/SubjectManagement";
 import { VideoModal } from "@/components/VideoModal";
 import { Footer } from "@/components/Footer";
 import { Branch, Subject, Video, Lecturer } from "@/lib/types";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
 import { useSearchFilter } from "@/hooks/useSearchFilter";
+import { useAuth } from "@/hooks/useAuth";
 
 export default function BranchView() {
   const { branchCode, semesterNumber = "3" } = useParams();
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedVideo, setSelectedVideo] = useState<(Video & { lecturer: Lecturer }) | null>(null);
+  const { isProfessor } = useAuth();
   
   // Fetch the branch by code
   const { data: branch, isLoading: isLoadingBranch } = useQuery<Branch>({
@@ -22,8 +25,17 @@ export default function BranchView() {
     enabled: !!branchCode,
   });
   
+  // Fetch semesters for this branch
+  const { data: semesters = [] } = useQuery<any[]>({
+    queryKey: [`/api/branches/${branch?.id}/semesters`],
+    enabled: !!branch?.id,
+  });
+  
+  // Find the current semester
+  const currentSemester = semesters.find(s => s.number === parseInt(semesterNumber));
+  
   // Fetch subjects for this branch and semester
-  const { data: subjects = [], isLoading: isLoadingSubjects } = useQuery<Subject[]>({
+  const { data: subjects = [], isLoading: isLoadingSubjects, refetch } = useQuery<Subject[]>({
     queryKey: ["/api/subjects", { branchId: branch?.id, semester: semesterNumber }],
     enabled: !!branch?.id,
   });
@@ -92,6 +104,15 @@ export default function BranchView() {
                 Find curated video lectures for all your {getOrdinal(parseInt(semesterNumber))} semester {branch?.code} subjects.
               </p>
             </div>
+
+            {/* Subject Management for Professors */}
+            {isProfessor && currentSemester && (
+              <SubjectManagement 
+                branchId={branch?.id || 0}
+                semesterId={currentSemester.id}
+                onSubjectAdded={() => refetch()}
+              />
+            )}
             
             {/* Subjects Grid */}
             {isLoadingSubjects ? (
