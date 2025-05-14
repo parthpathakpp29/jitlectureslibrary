@@ -33,6 +33,7 @@ export interface IStorage {
   getSubjectById(id: number): Promise<Subject | undefined>;
   getSubjectsBySemester(semesterId: number): Promise<Subject[]>;
   getSubjectsByBranchAndSemester(branchId: number, semesterNumber: number): Promise<Subject[]>;
+  createSubject(subject: Partial<Subject>): Promise<Subject>;
   
   // Lecturer methods
   getLecturer(id: number): Promise<Lecturer | undefined>;
