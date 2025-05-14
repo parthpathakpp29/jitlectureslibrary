@@ -45,8 +45,8 @@ export const videos = pgTable("videos", {
   description: text("description"),
   youtubeId: text("youtube_id").notNull(),
   duration: integer("duration").notNull(), // in seconds
-  subjectId: integer("subject_id").notNull(),
-  lecturerId: integer("lecturer_id").notNull(),
+  subjectId: integer("subject_id").notNull().references(() => subjects.id),
+  lecturerId: integer("lecturer_id").notNull().references(() => lecturers.id),
   publishedAt: timestamp("published_at"),
 });
 
