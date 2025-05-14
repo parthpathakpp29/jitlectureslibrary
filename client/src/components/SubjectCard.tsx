@@ -21,6 +21,8 @@ interface SubjectCardProps {
 
 export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   const { isProfessor } = useAuth();
+  const [selectedVideo, setSelectedVideo] = useState<VideoWithLecturer | null>(null);
+  const [isManagementOpen, setIsManagementOpen] = useState(false);
   
   console.log(`SubjectCard rendering for subject ID: ${subject.id}`);
   
@@ -36,6 +38,17 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   if (error) {
     console.error(`Error fetching videos for subject ${subject.id}:`, error);
   }
+  
+  // Handlers for edit and delete operations
+  const handleEditClick = (video: VideoWithLecturer) => {
+    setSelectedVideo(video);
+    setIsManagementOpen(true);
+  };
+  
+  const handleDeleteClick = (video: VideoWithLecturer) => {
+    setSelectedVideo(video);
+    setIsManagementOpen(true);
+  };
   
   if (isLoading) {
     return (
@@ -88,15 +101,42 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
               {videos.map(video => (
                 <div 
                   key={video.id}
-                  className="video-preview bg-gray-100 rounded-lg p-3 hover:bg-gray-200 cursor-pointer transition"
-                  onClick={() => onVideoSelect(video)}
+                  className="video-preview bg-gray-100 rounded-lg p-3 hover:bg-gray-200 transition"
                 >
-                  <div className="flex items-center">
-                    <Play className="text-primary mr-2 h-5 w-5" />
-                    <div>
-                      <p className="font-medium text-sm">{video.title}</p>
-                      <p className="text-xs text-gray-500">{formatDuration(video.duration)}</p>
+                  <div className="flex items-center justify-between">
+                    <div 
+                      className="flex items-center flex-1 cursor-pointer" 
+                      onClick={() => onVideoSelect(video)}
+                    >
+                      <Play className="text-primary mr-2 h-5 w-5" />
+                      <div>
+                        <p className="font-medium text-sm">{video.title}</p>
+                        <p className="text-xs text-gray-500">{formatDuration(video.duration)}</p>
+                      </div>
                     </div>
+                    
+                    {isProfessor && (
+                      <div className="flex space-x-2">
+                        <button 
+                          className="text-blue-500 hover:text-blue-700 text-xs p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditClick(video);
+                          }}
+                        >
+                          Edit
+                        </button>
+                        <button 
+                          className="text-red-500 hover:text-red-700 text-xs p-1"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteClick(video);
+                          }}
+                        >
+                          Delete
+                        </button>
+                      </div>
+                    )}
                   </div>
                 </div>
               ))}
