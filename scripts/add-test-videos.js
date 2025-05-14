@@ -74,14 +74,14 @@ async function addTestVideos() {
     console.log('Checking existing videos...');
     const { data: existingVideos, error: videosError } = await supabase
       .from('videos')
-      .select('count(*)');
+      .select('*');
     
     if (videosError) {
       console.error('Error checking existing videos:', videosError);
       return;
     }
     
-    const videoCount = parseInt(existingVideos[0].count);
+    const videoCount = existingVideos ? existingVideos.length : 0;
     console.log(`Found ${videoCount} existing videos`);
     
     if (videoCount > 0) {
