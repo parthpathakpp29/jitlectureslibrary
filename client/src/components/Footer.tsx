@@ -9,11 +9,11 @@ export function Footer() {
           <Link href="/">
             <div className="flex items-center mb-4 md:mb-0 cursor-pointer">
               <School className="h-5 w-5 text-primary mr-2" />
-              <span className="font-semibold">EduStream</span>
+              <span className="font-semibold">JIT LECTURES LIBRARY</span>
             </div>
           </Link>
           <div className="text-sm text-gray-500">
-            © {new Date().getFullYear()} EduStream. All rights reserved.
+            CREATED BY PARTH,KSHITIJ,KUNAL
           </div>
         </div>
       </div>
