@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Play } from "lucide-react";
 import { Lecturer, Subject, Video } from "@/lib/types";
@@ -23,6 +23,7 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   const { isProfessor } = useAuth();
   const [selectedVideo, setSelectedVideo] = useState<VideoWithLecturer | null>(null);
   const [isManagementOpen, setIsManagementOpen] = useState(false);
+  const videoManagementRef = useRef<HTMLDivElement>(null);
   
   console.log(`SubjectCard rendering for subject ID: ${subject.id}`);
   
@@ -152,10 +153,15 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
         
         {/* Video Management for professors */}
         {isProfessor && (
-          <VideoManagement 
-            subjectId={subject.id} 
-            onVideoAdded={() => refetch()} 
-          />
+          <div ref={videoManagementRef}>
+            <VideoManagement 
+              subjectId={subject.id} 
+              onVideoAdded={() => refetch()}
+              selectedVideo={selectedVideo}
+              isOpen={isManagementOpen}
+              onOpenChange={setIsManagementOpen}
+            />
+          </div>
         )}
       </CardContent>
     </Card>

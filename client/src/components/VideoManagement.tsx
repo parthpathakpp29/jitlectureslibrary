@@ -73,6 +73,7 @@ interface VideoManagementProps {
   onOpenChange?: (open: boolean) => void;
 }
 
+// Export the component and expose the edit and delete handlers
 export function VideoManagement({ 
   subjectId, 
   onVideoAdded, 
@@ -272,8 +273,8 @@ export function VideoManagement({
   
   // Handle form submission
   const onSubmit = (values: VideoFormValues) => {
-    if (isEditDialogOpen && selectedVideo) {
-      editVideoMutation.mutate({ id: selectedVideo.id, data: values });
+    if (isEditDialogOpen && currentSelectedVideo) {
+      editVideoMutation.mutate({ id: currentSelectedVideo.id, data: values });
     } else {
       addVideoMutation.mutate(values);
     }
@@ -281,15 +282,19 @@ export function VideoManagement({
   
   // Handle edit button click
   const handleEditClick = (video: Video & { lecturer: Lecturer }) => {
-    setSelectedVideo(video);
+    setInternalSelectedVideo(video);
     resetForm(video);
     setIsEditDialogOpen(true);
+    // Notify parent of state change if callback exists
+    if (onOpenChange) onOpenChange(true);
   };
   
   // Handle delete button click
   const handleDeleteClick = (video: Video & { lecturer: Lecturer }) => {
-    setSelectedVideo(video);
+    setInternalSelectedVideo(video);
     setIsDeleteDialogOpen(true);
+    // Notify parent of state change if callback exists
+    if (onOpenChange) onOpenChange(true);
   };
   
   // Parse YouTube ID from URL
