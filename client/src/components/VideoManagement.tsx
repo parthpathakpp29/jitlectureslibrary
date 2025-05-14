@@ -101,9 +101,17 @@ export function VideoManagement({
   useEffect(() => {
     if (externalIsOpen !== undefined) {
       if (externalIsOpen) {
-        // If external state wants dialog open and we have a selectedVideo, open edit/delete dialog
+        // If external state wants dialog open and we have a selectedVideo
         if (selectedVideo) {
-          setIsEditDialogOpen(true);
+          // Check what action to perform based on the stored action type
+          const videoAction = sessionStorage.getItem('videoAction');
+          
+          if (videoAction === 'delete') {
+            setIsDeleteDialogOpen(true);
+          } else {
+            // Default to edit if no action is specified or if it's 'edit'
+            setIsEditDialogOpen(true);
+          }
         } else {
           // Otherwise open add dialog
           setIsAddDialogOpen(true);
@@ -113,6 +121,8 @@ export function VideoManagement({
         setIsAddDialogOpen(false);
         setIsEditDialogOpen(false);
         setIsDeleteDialogOpen(false);
+        // Clear the action type when closing dialogs
+        sessionStorage.removeItem('videoAction');
       }
     }
   }, [externalIsOpen, selectedVideo]);
@@ -551,14 +561,14 @@ export function VideoManagement({
           <AlertDialogHeader>
             <AlertDialogTitle>Are you sure?</AlertDialogTitle>
             <AlertDialogDescription>
-              This will permanently delete the video "{selectedVideo?.title}".
+              This will permanently delete the video "{currentSelectedVideo?.title}".
               This action cannot be undone.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Cancel</AlertDialogCancel>
             <AlertDialogAction
-              onClick={() => selectedVideo && deleteVideoMutation.mutate(selectedVideo.id)}
+              onClick={() => currentSelectedVideo && deleteVideoMutation.mutate(currentSelectedVideo.id)}
               className="bg-red-500 hover:bg-red-600"
               disabled={deleteVideoMutation.isPending}
             >

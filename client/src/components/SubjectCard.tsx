@@ -43,11 +43,15 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
   // Handlers for edit and delete operations
   const handleEditClick = (video: VideoWithLecturer) => {
     setSelectedVideo(video);
+    // Store edit action type in sessionStorage
+    sessionStorage.setItem('videoAction', 'edit');
     setIsManagementOpen(true);
   };
   
   const handleDeleteClick = (video: VideoWithLecturer) => {
     setSelectedVideo(video);
+    // Store delete action type in sessionStorage
+    sessionStorage.setItem('videoAction', 'delete');
     setIsManagementOpen(true);
   };
   
