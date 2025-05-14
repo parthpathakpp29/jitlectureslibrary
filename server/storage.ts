@@ -901,6 +901,42 @@ export class SupabaseStorage implements IStorage {
       branchId: data.branch_id
     } as Subject;
   }
+  
+  async createSubject(subjectData: Partial<Subject>): Promise<Subject> {
+    console.log('Creating subject with data:', subjectData);
+    
+    // Map from our model to database schema
+    const dbSubject = {
+      name: subjectData.name,
+      description: subjectData.description,
+      semester_id: subjectData.semesterId,
+      branch_id: subjectData.branchId,
+    };
+    
+    const { data, error } = await this.supabase
+      .from('subjects')
+      .insert(dbSubject)
+      .select()
+      .single();
+    
+    if (error) {
+      console.error('Error creating subject:', error);
+      throw new Error(error.message);
+    }
+    
+    if (!data) {
+      throw new Error('Failed to create subject');
+    }
+    
+    // Map from database schema back to our model
+    return {
+      id: data.id,
+      name: data.name,
+      description: data.description,
+      semesterId: data.semester_id,
+      branchId: data.branch_id,
+    };
+  }
 }
 // Using Supabase storage since tables have been created
 console.log("Using Supabase database storage");

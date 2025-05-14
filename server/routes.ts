@@ -567,6 +567,31 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Create a new subject (for professors only)
+  apiRouter.post("/subjects", isProfessor, async (req, res) => {
+    try {
+      // Validate subject data
+      const subjectData = req.body;
+      
+      if (!subjectData.name || !subjectData.semesterId || !subjectData.branchId) {
+        return res.status(400).json({ message: "Missing required fields" });
+      }
+      
+      // Create the subject
+      const subject = await storage.createSubject({
+        name: subjectData.name,
+        description: subjectData.description || "",
+        semesterId: subjectData.semesterId,
+        branchId: subjectData.branchId
+      });
+      
+      res.status(201).json(subject);
+    } catch (error) {
+      console.error("Error creating subject:", error);
+      res.status(500).json({ message: "Failed to create subject" });
+    }
+  });
+  
   // Setup endpoint to seed semester 3 subjects (for development)
   apiRouter.get("/setup-semester-3", async (req, res) => {
     try {
