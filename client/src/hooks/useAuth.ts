@@ -17,15 +17,23 @@ export function useAuth() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
+  // Get userId from localStorage if available
+  const storedUserId = typeof window !== 'undefined' ? localStorage.getItem('userId') : null;
+  
   // Fetch the current user
   const { data: user, isLoading } = useQuery({
-    queryKey: ["/api/users/me"],
+    queryKey: ["/api/users/me", storedUserId ? { userId: storedUserId } : {}],
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
     // Skip the default queryFn that throws on 401 errors
     queryFn: async ({ queryKey }) => {
       try {
-        const url = queryKey[0] as string;
+        let url = queryKey[0] as string;
+        // Add userId as query parameter if available
+        if (storedUserId) {
+          url += `?userId=${storedUserId}`;
+        }
+        
         const res = await fetch(url, { credentials: "include" });
         
         // Return null if not authenticated (instead of throwing an error)
@@ -42,7 +50,8 @@ export function useAuth() {
         console.error("Auth query error:", error);
         return null;
       }
-    }
+    },
+    enabled: !!storedUserId, // Only run the query if we have a userId
   });
 
   // Login mutation
@@ -68,8 +77,13 @@ export function useAuth() {
       }
     },
     onSuccess: (data) => {
+      // Save userId to localStorage
+      if (data.user && data.user.id) {
+        localStorage.setItem('userId', data.user.id.toString());
+      }
+      
       // Update auth state
-      queryClient.setQueryData(["/api/users/me"], data.user);
+      queryClient.setQueryData(["/api/users/me", { userId: data.user.id }], data.user);
       toast({
         title: "Login successful",
         description: "Welcome back!",
