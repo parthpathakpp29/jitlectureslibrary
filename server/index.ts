@@ -1,58 +1,66 @@
-import express from "express";
-import dotenv from "dotenv";
-import cors from "cors";
-import path from "path";
-import { fileURLToPath } from "url";
-
-import routes from "./routes";
-import { supabase } from "./storage"; // Make sure this is initializing correctly
-
-dotenv.config();
+import express, { type Request, Response, NextFunction } from "express";
+import { registerRoutes } from "./routes";
+import { setupVite, serveStatic, log } from "./vite";
 
 const app = express();
-
-// Middleware
-app.use(cors());
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 
-// API routes
-app.use("/api", routes);
+app.use((req, res, next) => {
+  const start = Date.now();
+  const path = req.path;
+  let capturedJsonResponse: Record<string, any> | undefined = undefined;
 
-// Root route for health checks
-app.get("/", (_req, res) => {
-  res.send("✅ JitLecturesLibrary backend is running.");
+  const originalResJson = res.json;
+  res.json = function (bodyJson, ...args) {
+    capturedJsonResponse = bodyJson;
+    return originalResJson.apply(res, [bodyJson, ...args]);
+  };
+
+  res.on("finish", () => {
+    const duration = Date.now() - start;
+    if (path.startsWith("/api")) {
+      let logLine = `${req.method} ${path} ${res.statusCode} in ${duration}ms`;
+      if (capturedJsonResponse) {
+        logLine += ` :: ${JSON.stringify(capturedJsonResponse)}`;
+      }
+
+      if (logLine.length > 80) {
+        logLine = logLine.slice(0, 79) + "…";
+      }
+
+      log(logLine);
+    }
+  });
+
+  next();
 });
 
-// Optional: Run seed script if SEED_PATH is defined
-async function maybeRunSeedScript() {
-  const seedPath = process.env.SEED_PATH;
-  if (!seedPath) {
-    console.log("⏭️  Skipping seeding (SEED_PATH not set)");
-    return;
+(async () => {
+  const server = await registerRoutes(app);
+
+  app.use((err: any, _req, res, _next) => {
+    const status = err.status || err.statusCode || 500;
+    const message = err.message || "Internal Server Error";
+    res.status(status).json({ message });
+    throw err;
+  });
+
+  // importantly only setup vite in development and after
+  // setting up all the other routes so the catch-all route
+  // doesn't interfere with the other routes
+
+  if (app.get("env") === "development") {
+    await setupVite(app, server);
+  } else {
+    serveStatic(app);
   }
 
-  try {
-    // Ensure compatibility with ESM
-    const __filename = fileURLToPath(import.meta.url);
-    const __dirname = path.dirname(__filename);
-    const resolvedPath = path.resolve(__dirname, seedPath);
-
-    console.log(`🌱 Seeding from: ${resolvedPath}`);
-    const seedModule = await import(resolvedPath);
-    if (seedModule.default) await seedModule.default();
-    else if (typeof seedModule === "function") await seedModule();
-    console.log("✅ Seeding complete");
-  } catch (err) {
-    console.error("❌ Failed to run seed script:", err);
-  }
-}
-
-// Start server
-const PORT = process.env.PORT || 5000;
-
-app.listen(PORT, async () => {
-  console.log(`🚀 Server running on http://localhost:${PORT}`);
-
-  // Optional seed
-  await maybeRunSeedScript();
-});
+  // ALWAYS serve the app on port 5000
+  // this serves both the API and the client.
+  // It is the only port that is not firewalled.
+const port = Number(process.env.PORT) || 5000;
+  server.listen(port, "0.0.0.0", () => {
+    log(`serving on http://0.0.0.0:${port}`);
+  });
+})();
