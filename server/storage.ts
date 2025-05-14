@@ -739,6 +739,8 @@ export class SupabaseStorage implements IStorage {
 
   // Video methods
   async getVideosBySubject(subjectId: number): Promise<Video[]> {
+    console.log(`Storage: Getting videos for subject ID ${subjectId}`);
+    
     const { data, error } = await this.supabase
       .from('videos')
       .select('*')
@@ -749,7 +751,14 @@ export class SupabaseStorage implements IStorage {
       return [];
     }
     
-    return data.map(video => ({
+    console.log(`Storage: Raw videos data from Supabase:`, data);
+    
+    if (!data || data.length === 0) {
+      console.log(`Storage: No videos found for subject ID ${subjectId}`);
+      return [];
+    }
+    
+    const mappedVideos = data.map(video => ({
       id: video.id,
       title: video.title,
       description: video.description,
@@ -759,6 +768,9 @@ export class SupabaseStorage implements IStorage {
       lecturerId: video.lecturer_id,
       publishedAt: video.published_at
     })) as Video[];
+    
+    console.log(`Storage: Mapped ${mappedVideos.length} videos for subject ID ${subjectId}`);
+    return mappedVideos;
   }
 
   async getVideoById(id: number): Promise<Video | undefined> {

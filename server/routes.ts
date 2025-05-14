@@ -84,17 +84,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   apiRouter.get("/subjects/:subjectId/videos", async (req, res) => {
     try {
       const subjectId = parseInt(req.params.subjectId);
+      console.log(`Fetching videos for subject ID: ${subjectId}`);
 
       if (isNaN(subjectId)) {
         return res.status(400).json({ message: "Invalid subject ID" });
       }
 
       const videos = await storage.getVideosBySubject(subjectId);
+      console.log(`Found ${videos.length} videos for subject ID ${subjectId}`);
 
       // Enhance videos with lecturer info
       const enhancedVideos = await Promise.all(
         videos.map(async (video) => {
+          console.log(`Getting lecturer info for video: ${video.title} (ID: ${video.id})`);
           const lecturer = await storage.getLecturer(video.lecturerId);
+          console.log(`Lecturer for video ${video.id}: ${lecturer ? lecturer.name : 'Not found'}`);
           return {
             ...video,
             lecturer: lecturer || null,
@@ -102,8 +106,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
         }),
       );
 
+      console.log(`Returning ${enhancedVideos.length} enhanced videos`);
       res.json(enhancedVideos);
     } catch (error) {
+      console.error("Error fetching videos:", error);
       res.status(500).json({ message: "Failed to fetch videos" });
     }
   });
