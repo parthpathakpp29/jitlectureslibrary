@@ -6,6 +6,7 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   username: text("username").notNull().unique(),
   password: text("password").notNull(),
+  type: text("type").notNull().default("student"),
 });
 
 export const branches = pgTable("branches", {

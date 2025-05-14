@@ -55,21 +55,26 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Get subjects by branch and semester
   apiRouter.get("/subjects", async (req, res) => {
     try {
+      console.log("Fetching subjects with params:", req.query);
       const branchId = parseInt(req.query.branchId as string);
       const semesterNumber = parseInt(req.query.semester as string);
 
       if (isNaN(branchId) || isNaN(semesterNumber)) {
+        console.log("Invalid params - branchId:", branchId, "semesterNumber:", semesterNumber);
         return res
           .status(400)
           .json({ message: "Invalid branch ID or semester number" });
       }
 
+      console.log("Looking for subjects with branchId:", branchId, "semesterNumber:", semesterNumber);
       const subjects = await storage.getSubjectsByBranchAndSemester(
         branchId,
         semesterNumber,
       );
+      console.log("Found subjects:", subjects.length);
       res.json(subjects);
     } catch (error) {
+      console.error("Error fetching subjects:", error);
       res.status(500).json({ message: "Failed to fetch subjects" });
     }
   });
