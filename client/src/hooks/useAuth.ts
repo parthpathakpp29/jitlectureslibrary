@@ -22,6 +22,27 @@ export function useAuth() {
     queryKey: ["/api/users/me"],
     retry: false,
     staleTime: 1000 * 60 * 5, // 5 minutes
+    // Skip the default queryFn that throws on 401 errors
+    queryFn: async ({ queryKey }) => {
+      try {
+        const url = queryKey[0] as string;
+        const res = await fetch(url, { credentials: "include" });
+        
+        // Return null if not authenticated (instead of throwing an error)
+        if (res.status === 401) {
+          return null;
+        }
+        
+        if (!res.ok) {
+          throw new Error(`Request failed with status ${res.status}`);
+        }
+        
+        return await res.json();
+      } catch (error) {
+        console.error("Auth query error:", error);
+        return null;
+      }
+    }
   });
 
   // Login mutation
