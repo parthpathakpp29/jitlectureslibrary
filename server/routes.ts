@@ -165,8 +165,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         return res.status(401).json({ message: "Invalid username or password" });
       }
       
-      // In a real app, you would create a session or JWT token here
-      // For simplicity, we're just returning the user
+      // For simplicity, we store the user ID in a query parameter
+      // This simulates a session without implementing full session management
+      // In a production app, you would use a secure session or JWT token
       const { password: _, ...userWithoutPassword } = user;
       
       res.json({
@@ -179,10 +180,14 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  // Logout
+  apiRouter.post("/users/logout", async (req, res) => {
+    // In a production app, you would destroy the session
+    res.json({ message: "Logged out successfully" });
+  });
+  
   // Current user
   apiRouter.get("/users/me", async (req, res) => {
-    // In a real app, this would verify session/JWT token
-    // For this demo, we'll simulate by looking up a sample user
     try {
       const { userId } = req.query;
       

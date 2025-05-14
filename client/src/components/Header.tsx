@@ -1,8 +1,18 @@
 import { useState } from "react";
-import { Link } from "wouter";
+import { Link, useLocation } from "wouter";
 import { Input } from "@/components/ui/input";
-import { School, Search, User } from "lucide-react";
+import { School, Search, User, LogOut, LogIn, UserCog } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { useAuth } from "@/hooks/useAuth";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { cn } from "@/lib/utils";
 
 interface HeaderProps {
   onSearch?: (searchTerm: string) => void;
@@ -10,6 +20,8 @@ interface HeaderProps {
 
 export function Header({ onSearch }: HeaderProps) {
   const [searchTerm, setSearchTerm] = useState("");
+  const [, setLocation] = useLocation();
+  const { user, isAuthenticated, isProfessor, logout } = useAuth();
   
   const handleSearchChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
@@ -17,6 +29,11 @@ export function Header({ onSearch }: HeaderProps) {
     if (onSearch) {
       onSearch(value);
     }
+  };
+  
+  const handleLogout = () => {
+    logout();
+    setLocation("/");
   };
   
   return (
@@ -45,9 +62,51 @@ export function Header({ onSearch }: HeaderProps) {
           <Button variant="ghost" size="icon" className="md:hidden">
             <Search className="h-5 w-5 text-gray-700" />
           </Button>
-          <Button variant="ghost" size="icon">
-            <User className="h-5 w-5 text-gray-700" />
-          </Button>
+          
+          {/* User menu */}
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className={cn(
+                    "rounded-full",
+                    isProfessor && "bg-primary/10"
+                  )}
+                >
+                  {isProfessor ? (
+                    <UserCog className="h-5 w-5 text-gray-700" />
+                  ) : (
+                    <User className="h-5 w-5 text-gray-700" />
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuLabel>
+                  <div className="flex flex-col">
+                    <span className="font-medium">{user?.username}</span>
+                    <span className="text-xs text-gray-500 capitalize">{user?.type}</span>
+                  </div>
+                </DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem onClick={handleLogout}>
+                  <LogOut className="mr-2 h-4 w-4" />
+                  <span>Logout</span>
+                </DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              onClick={() => setLocation("/login")}
+              className="flex items-center"
+            >
+              <LogIn className="mr-2 h-4 w-4" />
+              <span>Login</span>
+            </Button>
+          )}
         </div>
       </div>
     </header>

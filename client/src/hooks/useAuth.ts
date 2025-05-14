@@ -8,22 +8,35 @@ export type AuthUser = {
   type: string;
 };
 
+type LoginResponse = {
+  message: string;
+  user: AuthUser;
+};
+
 export function useAuth() {
   const queryClient = useQueryClient();
   const { toast } = useToast();
 
-  const { data: user, isLoading } = useQuery<AuthUser>({
+  // Fetch the current user
+  const { data: user, isLoading } = useQuery({
     queryKey: ["/api/users/me"],
     retry: false,
+    staleTime: 1000 * 60 * 5, // 5 minutes
   });
 
+  // Login mutation
   const loginMutation = useMutation({
-    mutationFn: (credentials: { username: string; password: string }) => {
-      return apiRequest<{ message: string; user: AuthUser }>({
-        url: "/api/users/login",
-        method: "POST",
-        data: credentials,
-      });
+    mutationFn: async (credentials: { username: string; password: string }) => {
+      try {
+        const res = await apiRequest({
+          url: "/api/users/login",
+          method: "POST",
+          data: credentials,
+        });
+        return res as unknown as LoginResponse;
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: (data) => {
       // Update auth state
@@ -42,13 +55,19 @@ export function useAuth() {
     },
   });
 
+  // Registration mutation
   const registerMutation = useMutation({
-    mutationFn: (userData: { username: string; password: string; type?: string }) => {
-      return apiRequest<AuthUser>({
-        url: "/api/users/register",
-        method: "POST",
-        data: userData,
-      });
+    mutationFn: async (userData: { username: string; password: string; type?: string }) => {
+      try {
+        const res = await apiRequest({
+          url: "/api/users/register",
+          method: "POST",
+          data: userData,
+        });
+        return res as unknown as AuthUser;
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: () => {
       toast({
@@ -65,12 +84,18 @@ export function useAuth() {
     },
   });
 
+  // Logout mutation
   const logoutMutation = useMutation({
-    mutationFn: () => {
-      return apiRequest<{ message: string }>({
-        url: "/api/users/logout",
-        method: "POST",
-      });
+    mutationFn: async () => {
+      try {
+        const res = await apiRequest({
+          url: "/api/users/logout",
+          method: "POST",
+        });
+        return res as unknown as { message: string };
+      } catch (error) {
+        throw error;
+      }
     },
     onSuccess: () => {
       // Clear auth state
@@ -85,10 +110,10 @@ export function useAuth() {
   });
 
   return {
-    user,
+    user: user as AuthUser | undefined,
     isLoading,
     isAuthenticated: !!user,
-    isProfessor: user?.type === "professor",
+    isProfessor: user && (user as AuthUser).type === "professor",
     login: loginMutation.mutate,
     register: registerMutation.mutate,
     logout: logoutMutation.mutate,
