@@ -150,16 +150,10 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
-  // User login (for professors only)
-  apiRouter.post("/users/login", async (req, res) => {
+  // Special setup endpoint to add the test professor and semester 3 data
+  apiRouter.get("/setup", async (req, res) => {
     try {
-      const { username, password } = req.body;
-      
-      if (!username || !password) {
-        return res.status(400).json({ message: "Username and password are required" });
-      }
-      
-      // Check if we need to add test professor user (kshitij/kk123456)
+      // 1. Add test professor user if it doesn't exist
       const existingProf = await storage.getUserByUsername('kshitij');
       if (!existingProf) {
         console.log("Adding test professor user...");
@@ -178,6 +172,147 @@ export async function registerRoutes(app: Express): Promise<Server> {
         } else {
           console.log("Test professor added successfully!");
         }
+      }
+      
+      // 2. Create semester 3 and add subjects
+      // Get the CSE branch
+      const { data: cseBranch, error: branchError } = await storage.supabase
+        .from('branches')
+        .select('*')
+        .eq('code', 'CSE')
+        .single();
+        
+      if (branchError || !cseBranch) {
+        return res.status(500).json({
+          message: "Error finding CSE branch",
+          error: branchError?.message
+        });
+      }
+      
+      console.log("Found CSE branch:", cseBranch);
+      
+      // Check if semester 3 exists
+      const { data: semesters, error: semError } = await storage.supabase
+        .from('semesters')
+        .select('*')
+        .eq('number', 3)
+        .eq('branch_id', cseBranch.id);
+        
+      if (semError) {
+        return res.status(500).json({
+          message: "Error checking for semester 3",
+          error: semError.message
+        });
+      }
+      
+      let semesterId;
+      
+      if (!semesters || semesters.length === 0) {
+        // Create semester 3
+        console.log("Creating semester 3...");
+        const { data: newSem, error: createError } = await storage.supabase
+          .from('semesters')
+          .insert([{
+            number: 3,
+            branch_id: cseBranch.id
+          }])
+          .select()
+          .single();
+          
+        if (createError || !newSem) {
+          return res.status(500).json({
+            message: "Error creating semester 3",
+            error: createError?.message
+          });
+        }
+        
+        semesterId = newSem.id;
+        console.log("Created semester 3 with ID:", semesterId);
+      } else {
+        semesterId = semesters[0].id;
+        console.log("Found existing semester 3 with ID:", semesterId);
+      }
+      
+      // Check if the semester already has subjects
+      const { data: existingSubjects, error: subjectCheckError } = await storage.supabase
+        .from('subjects')
+        .select('*')
+        .eq('semester_id', semesterId);
+        
+      if (subjectCheckError) {
+        return res.status(500).json({
+          message: "Error checking for existing subjects",
+          error: subjectCheckError.message
+        });
+      }
+      
+      let setupResults = {
+        profAdded: !existingProf,
+        semesterId: semesterId,
+        subjectsAdded: false,
+        subjectCount: existingSubjects?.length || 0
+      };
+      
+      if (!existingSubjects || existingSubjects.length === 0) {
+        // Add subjects to semester 3
+        const subjects = [
+          {
+            name: 'Data Structures and Algorithms',
+            description: 'Learn essential data structures like arrays, linked lists, trees, graphs, and algorithms for sorting, searching, and graph traversal.',
+            semester_id: semesterId,
+            branch_id: cseBranch.id
+          },
+          {
+            name: 'Object Oriented Programming',
+            description: 'Study object-oriented programming concepts including classes, objects, inheritance, polymorphism, encapsulation, and design patterns.',
+            semester_id: semesterId,
+            branch_id: cseBranch.id
+          },
+          {
+            name: 'Computer Organization',
+            description: 'Understanding computer architecture, CPU design, memory hierarchy, and assembly language programming.',
+            semester_id: semesterId,
+            branch_id: cseBranch.id
+          }
+        ];
+        
+        const { data: newSubjects, error: insertError } = await storage.supabase
+          .from('subjects')
+          .insert(subjects)
+          .select();
+          
+        if (insertError) {
+          return res.status(500).json({
+            message: "Error creating subjects",
+            error: insertError.message
+          });
+        }
+        
+        setupResults.subjectsAdded = true;
+        setupResults.subjectCount = newSubjects.length;
+      }
+      
+      return res.json({
+        success: true,
+        message: "Setup completed successfully",
+        details: setupResults
+      });
+    } catch (error: any) {
+      console.error("Error in setup:", error);
+      return res.status(500).json({
+        message: "Error during setup",
+        error: error.message
+      });
+    }
+  });
+  
+  // User login (for professors only)
+  apiRouter.post("/users/login", async (req, res) => {
+    try {
+      const { username, password } = req.body;
+      
+      if (!username || !password) {
+        return res.status(400).json({ message: "Username and password are required" });
       }
       
       const user = await storage.getUserByUsername(username);
@@ -412,6 +547,136 @@ export async function registerRoutes(app: Express): Promise<Server> {
     } catch (error) {
       console.error("Error fetching subject:", error);
       res.status(500).json({ message: "Failed to fetch subject" });
+    }
+  });
+  
+  // Setup endpoint to seed semester 3 subjects (for development)
+  apiRouter.get("/setup-semester-3", async (req, res) => {
+    try {
+      // Get the CSE branch
+      const { data: cseBranch, error: branchError } = await storage.supabase
+        .from('branches')
+        .select('*')
+        .eq('code', 'CSE')
+        .single();
+        
+      if (branchError || !cseBranch) {
+        return res.status(500).json({
+          message: "Error finding CSE branch",
+          error: branchError?.message
+        });
+      }
+      
+      console.log("Found CSE branch:", cseBranch);
+      
+      // Check if semester 3 exists
+      const { data: semesters, error: semError } = await storage.supabase
+        .from('semesters')
+        .select('*')
+        .eq('number', 3)
+        .eq('branch_id', cseBranch.id);
+        
+      if (semError) {
+        return res.status(500).json({
+          message: "Error checking for semester 3",
+          error: semError.message
+        });
+      }
+      
+      let semesterId;
+      
+      if (!semesters || semesters.length === 0) {
+        // Create semester 3
+        console.log("Creating semester 3...");
+        const { data: newSem, error: createError } = await storage.supabase
+          .from('semesters')
+          .insert([{
+            number: 3,
+            branch_id: cseBranch.id
+          }])
+          .select()
+          .single();
+          
+        if (createError || !newSem) {
+          return res.status(500).json({
+            message: "Error creating semester 3",
+            error: createError?.message
+          });
+        }
+        
+        semesterId = newSem.id;
+        console.log("Created semester 3 with ID:", semesterId);
+      } else {
+        semesterId = semesters[0].id;
+        console.log("Found existing semester 3 with ID:", semesterId);
+      }
+      
+      // Check if the semester already has subjects
+      const { data: existingSubjects, error: subjectCheckError } = await storage.supabase
+        .from('subjects')
+        .select('*')
+        .eq('semester_id', semesterId);
+        
+      if (subjectCheckError) {
+        return res.status(500).json({
+          message: "Error checking for existing subjects",
+          error: subjectCheckError.message
+        });
+      }
+      
+      if (existingSubjects && existingSubjects.length > 0) {
+        return res.json({
+          message: "Semester 3 already has subjects",
+          count: existingSubjects.length,
+          subjects: existingSubjects
+        });
+      }
+      
+      // Add subjects to semester 3
+      const subjects = [
+        {
+          name: 'Data Structures and Algorithms',
+          description: 'Learn essential data structures like arrays, linked lists, trees, graphs, and algorithms for sorting, searching, and graph traversal.',
+          semester_id: semesterId,
+          branch_id: cseBranch.id
+        },
+        {
+          name: 'Object Oriented Programming',
+          description: 'Study object-oriented programming concepts including classes, objects, inheritance, polymorphism, encapsulation, and design patterns.',
+          semester_id: semesterId,
+          branch_id: cseBranch.id
+        },
+        {
+          name: 'Computer Organization',
+          description: 'Understanding computer architecture, CPU design, memory hierarchy, and assembly language programming.',
+          semester_id: semesterId,
+          branch_id: cseBranch.id
+        }
+      ];
+      
+      const { data: newSubjects, error: insertError } = await storage.supabase
+        .from('subjects')
+        .insert(subjects)
+        .select();
+        
+      if (insertError) {
+        return res.status(500).json({
+          message: "Error creating subjects",
+          error: insertError.message
+        });
+      }
+      
+      res.json({
+        message: "Successfully created subjects for semester 3",
+        count: newSubjects.length,
+        subjects: newSubjects
+      });
+    } catch (error: any) {
+      console.error("Error in setup-semester-3:", error);
+      res.status(500).json({
+        message: "Error setting up semester 3",
+        error: error.message
+      });
     }
   });
 
