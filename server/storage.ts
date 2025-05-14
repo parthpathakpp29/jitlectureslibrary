@@ -30,6 +30,7 @@ export interface IStorage {
   getSemestersByBranch(branchId: number): Promise<Semester[]>;
   
   // Subject methods
+  getSubjectById(id: number): Promise<Subject | undefined>;
   getSubjectsBySemester(semesterId: number): Promise<Subject[]>;
   getSubjectsByBranchAndSemester(branchId: number, semesterNumber: number): Promise<Subject[]>;
   
@@ -39,6 +40,9 @@ export interface IStorage {
   // Video methods
   getVideosBySubject(subjectId: number): Promise<Video[]>;
   getVideoById(id: number): Promise<Video | undefined>;
+  createVideo(video: Partial<Video>): Promise<Video>;
+  updateVideo(id: number, video: Partial<Video>): Promise<Video>;
+  deleteVideo(id: number): Promise<void>;
 }
 
 export class SupabaseStorage implements IStorage {
@@ -89,6 +93,177 @@ export class SupabaseStorage implements IStorage {
   private async seedData() {
     try {
       console.log("Seeding data into Supabase tables...");
+      
+      // Add additional subjects and semesters if needed
+      console.log("Checking for subjects in semester 3...");
+      const { data: semesterThreeSubjects, error: subjectCheckError } = await this.supabase
+        .from('subjects')
+        .select('*')
+        .eq('semester_id', 3);
+        
+      if (subjectCheckError) {
+        console.error("Error checking for semester 3 subjects:", subjectCheckError);
+      } else if (!semesterThreeSubjects || semesterThreeSubjects.length === 0) {
+        console.log("No subjects found for semester 3, adding additional seed data...");
+        
+        // First get the CSE branch and 3rd semester
+        const { data: cseBranches } = await this.supabase
+          .from('branches')
+          .select('*')
+          .eq('code', 'CSE');
+          
+        if (!cseBranches || cseBranches.length === 0) {
+          console.error("CSE branch not found");
+          return;
+        }
+        
+        const cseBranchId = cseBranches[0].id;
+        
+        // Check if semester 3 exists
+        const { data: semesters } = await this.supabase
+          .from('semesters')
+          .select('*')
+          .eq('number', 3)
+          .eq('branch_id', cseBranchId);
+          
+        let semesterId;
+        
+        if (!semesters || semesters.length === 0) {
+          // Create 3rd semester if it doesn't exist
+          const { data: newSemester, error: semesterError } = await this.supabase
+            .from('semesters')
+            .upsert([{ number: 3, branch_id: cseBranchId }])
+            .select();
+            
+          if (semesterError || !newSemester || newSemester.length === 0) {
+            console.error("Error creating 3rd semester:", semesterError);
+            return;
+          }
+          
+          semesterId = newSemester[0].id;
+          console.log("Created 3rd semester with ID:", semesterId);
+        } else {
+          semesterId = semesters[0].id;
+          console.log("Using existing 3rd semester with ID:", semesterId);
+        }
+        
+        // Create subjects for 3rd semester
+        const thirdSemesterSubjects = [
+          {
+            name: 'Data Structures and Algorithms',
+            description: 'Advanced implementation of data structures, algorithm design and analysis',
+            semester_id: semesterId,
+            branch_id: cseBranchId
+          },
+          {
+            name: 'Object-Oriented Programming',
+            description: 'Principles of OOP, inheritance, polymorphism, and design patterns',
+            semester_id: semesterId,
+            branch_id: cseBranchId
+          },
+          {
+            name: 'Database Management Systems',
+            description: 'Relational databases, SQL, normalization, and transaction management',
+            semester_id: semesterId,
+            branch_id: cseBranchId
+          }
+        ];
+        
+        const { data: newSubjects, error: subjectsError } = await this.supabase
+          .from('subjects')
+          .upsert(thirdSemesterSubjects)
+          .select();
+          
+        if (subjectsError) {
+          console.error("Error creating 3rd semester subjects:", subjectsError);
+          return;
+        }
+        
+        console.log("Created 3rd semester subjects:", newSubjects?.length || 0);
+        
+        // Add lecturers and videos for these subjects if needed
+        if (newSubjects && newSubjects.length > 0) {
+          // First check if we have lecturers
+          const { data: existingLecturers } = await this.supabase
+            .from('lecturers')
+            .select('*')
+            .limit(2);
+            
+          if (!existingLecturers || existingLecturers.length < 2) {
+            console.log("Need to add more lecturers");
+            
+            // Create more lecturers if needed
+            const additionalLecturers = [
+              { 
+                name: 'Dr. Michael Chen', 
+                title: 'Professor', 
+                institution: 'Stanford University',
+                image_url: null
+              },
+              { 
+                name: 'Dr. Priya Sharma', 
+                title: 'Associate Professor', 
+                institution: 'IIT Delhi',
+                image_url: null
+              }
+            ];
+            
+            await this.supabase
+              .from('lecturers')
+              .upsert(additionalLecturers);
+          }
+          
+          // Get the lecturers to use for videos
+          const { data: lecturers } = await this.supabase
+            .from('lecturers')
+            .select('*')
+            .limit(2);
+            
+          if (lecturers && lecturers.length >= 2) {
+            // Add videos for each subject
+            const videosData = [
+              {
+                title: 'Introduction to Data Structures',
+                description: 'Overview of common data structures and their applications',
+                youtube_id: 'HtSuA80QTyo', // Example YouTube ID
+                duration: 3600, // 1 hour in seconds
+                subject_id: newSubjects[0].id,
+                lecturer_id: lecturers[0].id,
+                published_at: new Date().toISOString()
+              },
+              {
+                title: 'Understanding OOP Concepts',
+                description: 'Detailed explanation of Object-Oriented Programming principles',
+                youtube_id: 'pTB0EiLXUC8', // Example YouTube ID
+                duration: 2700, // 45 minutes in seconds
+                subject_id: newSubjects[1].id,
+                lecturer_id: lecturers[1].id,
+                published_at: new Date().toISOString()
+              },
+              {
+                title: 'SQL Fundamentals',
+                description: 'Learn the basics of SQL and database queries',
+                youtube_id: 'HXV3zeQKqGY', // Example YouTube ID
+                duration: 3000, // 50 minutes in seconds
+                subject_id: newSubjects[2].id,
+                lecturer_id: lecturers[0].id,
+                published_at: new Date().toISOString()
+              }
+            ];
+            
+            const { data: videos, error: videosError } = await this.supabase
+              .from('videos')
+              .upsert(videosData)
+              .select();
+              
+            if (videosError) {
+              console.error("Error creating videos for 3rd semester:", videosError);
+            } else {
+              console.log("Created videos for 3rd semester:", videos?.length || 0);
+            }
+          }
+        }
+      }
       
       // Step 2: Now seed the data into the tables
       console.log("Seeding initial data...");
@@ -417,6 +592,8 @@ export class SupabaseStorage implements IStorage {
     branchId: number,
     semesterNumber: number
   ): Promise<Subject[]> {
+    console.log(`Looking for subjects with branchId=${branchId}, semesterNumber=${semesterNumber}`);
+    
     // First get the semester
     const { data: semesters, error: semesterError } = await this.supabase
       .from('semesters')
@@ -424,12 +601,76 @@ export class SupabaseStorage implements IStorage {
       .eq('branch_id', branchId)
       .eq('number', semesterNumber);
     
-    if (semesterError || !semesters || semesters.length === 0) {
+    if (semesterError) {
       console.error("Error getting semester:", semesterError);
       return [];
     }
     
+    if (!semesters || semesters.length === 0) {
+      console.log(`No semester found with number ${semesterNumber} for branch ${branchId}. Creating it now...`);
+      
+      // Create the semester if it doesn't exist
+      const { data: newSemester, error: newSemesterError } = await this.supabase
+        .from('semesters')
+        .upsert([{ number: semesterNumber, branch_id: branchId }])
+        .select();
+        
+      if (newSemesterError || !newSemester || newSemester.length === 0) {
+        console.error("Error creating new semester:", newSemesterError);
+        return [];
+      }
+      
+      console.log(`Created semester ${semesterNumber} with ID ${newSemester[0].id}`);
+      
+      // Add default subjects for this semester
+      if (semesterNumber === 3) {
+        const defaultSubjects = [
+          {
+            name: 'Data Structures and Algorithms',
+            description: 'Advanced implementation of data structures, algorithm design and analysis',
+            semester_id: newSemester[0].id,
+            branch_id: branchId
+          },
+          {
+            name: 'Object-Oriented Programming',
+            description: 'Principles of OOP, inheritance, polymorphism, and design patterns',
+            semester_id: newSemester[0].id,
+            branch_id: branchId
+          },
+          {
+            name: 'Database Management Systems',
+            description: 'Relational databases, SQL, normalization, and transaction management',
+            semester_id: newSemester[0].id,
+            branch_id: branchId
+          }
+        ];
+        
+        const { data: addedSubjects, error: addSubjectsError } = await this.supabase
+          .from('subjects')
+          .upsert(defaultSubjects)
+          .select();
+          
+        if (addSubjectsError) {
+          console.error("Error adding default subjects:", addSubjectsError);
+        } else {
+          console.log(`Added ${addedSubjects?.length || 0} default subjects for semester 3`);
+          
+          // Return the newly created subjects
+          return addedSubjects?.map(subject => ({
+            id: subject.id,
+            name: subject.name,
+            description: subject.description,
+            semesterId: subject.semester_id,
+            branchId: subject.branch_id
+          })) as Subject[] || [];
+        }
+      }
+      
+      return []; // Return empty if subjects couldn't be created
+    }
+    
     const semesterId = semesters[0].id;
+    console.log(`Found semester with ID ${semesterId}`);
     
     // Now get subjects for this semester
     const { data, error } = await this.supabase
@@ -443,7 +684,9 @@ export class SupabaseStorage implements IStorage {
       return [];
     }
     
-    return data.map(subject => ({
+    console.log(`Found ${data?.length || 0} subjects for semester ${semesterNumber}`);
+    
+    return (data || []).map(subject => ({
       id: subject.id,
       name: subject.name,
       description: subject.description,

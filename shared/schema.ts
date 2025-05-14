@@ -54,6 +54,7 @@ export const videos = pgTable("videos", {
 export const insertUserSchema = createInsertSchema(users).pick({
   username: true,
   password: true,
+  type: true,
 });
 
 export const insertBranchSchema = createInsertSchema(branches).pick({
