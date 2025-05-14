@@ -69,16 +69,17 @@ export async function setupVite(app: Express, server: Server) {
 
 // UPDATED STATIC SERVE FUNCTION
 export function serveStatic(app: Express) {
-  // Serve the built frontend from dist/public
+  // Use process.cwd() to get the root directory
   const distPath = path.resolve(process.cwd(), "dist", "public");
 
   if (!fs.existsSync(distPath)) {
     throw new Error(
-      `Could not find the build directory: ${distPath}, make sure to build the client first`,
+      `Could not find the build directory: ${distPath}, make sure to build the client first`
     );
   }
 
-  app.use(express.static(distPath));
+
+   app.use(express.static(distPath));
 
   // For React Router: serve index.html for all non-API routes
   app.get("*", (req, res) => {
