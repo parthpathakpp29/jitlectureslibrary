@@ -90,11 +90,7 @@ export function SubjectCard({ subject, onVideoSelect }: SubjectCardProps) {
           <>
             {/* Lecturer info */}
             <div className="flex items-center mb-4">
-              <img 
-                src={videos[0].lecturer.imageUrl || "https://via.placeholder.com/40"}
-                alt={videos[0].lecturer.name}
-                className="w-10 h-10 rounded-full mr-3 object-cover"
-              />
+           
               <div>
                 <p className="font-medium text-sm">{videos[0].lecturer.name}</p>
                 <p className="text-gray-500 text-xs">{videos[0].lecturer.title}, {videos[0].lecturer.institution}</p>

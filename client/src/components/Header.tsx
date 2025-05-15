@@ -105,7 +105,7 @@ export function Header({ onSearch }: HeaderProps) {
               className="flex items-center"
             >
               <LogIn className="mr-2 h-4 w-4" />
-              <span>Login</span>
+              <span>Teacher's Login</span>
             </Button>
           )}
         </div>

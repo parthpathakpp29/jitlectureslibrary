@@ -337,10 +337,7 @@ export function VideoManagement({
   return (
     <div className="mt-6">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold flex items-center">
-          <Film className="h-5 w-5 mr-2" />
-          Video Management
-        </h3>
+        
         <Button 
           onClick={() => {
             resetForm();
@@ -367,7 +364,7 @@ export function VideoManagement({
                 <h4 className="font-medium">{video.title}</h4>
                 <div className="text-sm text-gray-500 flex items-center mt-1">
                   <span className="mr-3">Duration: {formatDuration(video.duration)}</span>
-                  <span>Lecturer: {video.lecturer.name}</span>
+                
                 </div>
               </div>
               <div className="flex space-x-2">
@@ -394,7 +391,7 @@ export function VideoManagement({
         </div>
       ) : (
         <div className="text-center py-6 bg-gray-50 rounded-lg">
-          <p className="text-gray-500">No videos found for this subject. Add your first video!</p>
+          <p className="text-gray-500">No more videos found for this subject. Add your more videos!</p>
         </div>
       )}
       
