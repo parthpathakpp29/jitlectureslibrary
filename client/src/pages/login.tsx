@@ -57,7 +57,7 @@ export default function AuthPage() {
         <div className="text-center mb-8">
           <div className="inline-flex items-center justify-center">
             <School className="h-10 w-10 text-primary mr-2" />
-            <h1 className="text-3xl font-bold text-primary">EduStream</h1>
+            <h1 className="text-3xl font-bold text-primary">Jit Lectures Library</h1>
           </div>
           <p className="text-gray-600 mt-2">Access your educational content</p>
         </div>
